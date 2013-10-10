@@ -1,0 +1,9 @@
+C:\Users\david_2\Google Drive\prj\StoCAS\StoCAS\bin\StoCAS.dll
+C:\Users\david_2\Google Drive\prj\StoCAS\StoCAS\bin\StoCAS.pdb
+C:\Users\david_2\Google Drive\prj\StoCAS\StoCAS\obj\Debug\StoCAS.csprojResolveAssemblyReference.cache
+C:\Users\david_2\Google Drive\prj\StoCAS\StoCAS\obj\Debug\StoCAS.dll
+C:\Users\david_2\Google Drive\prj\StoCAS\StoCAS\obj\Debug\StoCAS.pdb
+C:\Users\david_2\Google Drive\prj\stocas-container\prj\StoCAS\bin\StoCAS.dll
+C:\Users\david_2\Google Drive\prj\stocas-container\prj\StoCAS\bin\StoCAS.pdb
+C:\Users\david_2\Google Drive\prj\stocas-container\prj\StoCAS\obj\Debug\StoCAS.dll
+C:\Users\david_2\Google Drive\prj\stocas-container\prj\StoCAS\obj\Debug\StoCAS.pdb

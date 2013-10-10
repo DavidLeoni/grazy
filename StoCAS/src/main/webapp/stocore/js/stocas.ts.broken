@@ -1,0 +1,161 @@
+module StoCAS {
+
+    export interface StoErrorInterface extends Error {
+    }
+
+    export class StoError implements StoErrorInterface {
+        code: number;
+        name: string;
+        message: string;
+        constructor(message?: string) {
+            this.message = "StoCAS error: " + message;
+        }
+        getCode(): number {
+            return this.code;
+        }
+    }
+
+
+
+    export interface Expr {
+
+
+        subst(x: Var, y: Expr);
+        toList() : List;
+
+    }
+
+    export class Var implements Expr {
+        public label: string;
+        constructor(label: string) {
+            this.label = label;
+        }
+
+        /**
+           x <- y
+        */
+        public subst(x: Var, y: Expr): Expr {
+            if (x === y) {
+                return x;
+            } else {
+                return y;
+            }
+        }
+
+        public toList(): List {
+            return list();
+        }
+    }
+
+    export interface List {
+
+        next(): List;
+
+        head();
+
+
+    }
+
+    
+    export var nil = new Nil();
+
+    export function list(...args: any[]) {
+
+    }
+
+    export class Cons implements List {
+        private _next: List;
+        private _head;
+        constructor(el, body) {
+            this._head = el;
+            this._next = body;
+        }
+
+        next(): List {
+            return this._next;
+        }
+
+        head() {
+            return this._head;
+        }
+
+    }
+
+    export class Nil implements List {
+
+        /**
+            [1,2].slice(2,2) returns [] . I will be less forgiving.
+        */
+        next(): List {
+            throw new StoError("Called next() on an empty list");
+        }
+
+        /**
+            [].pop() returns undefined . I will be less forgiving.
+        */
+
+        head() {
+            throw new StoError("Called head() on an empty list");
+        }
+
+    }
+
+
+    export class Lambda implements Expr {
+        public v: Var;
+        public body: Expr;
+        public Lambda(v: Var, body: Expr) {
+            this.v = v;
+            this.body = body;
+        }
+
+        public subst(x: Var, y: Expr): Expr {
+            if (this.v === x) {
+                return this;
+            } else {
+                return new Lambda(this.v, new Apply(new Lambda(x, this.body), y));
+            }
+        }
+
+        public toList(): List {
+        return
+
+    }
+
+    }
+
+    function substapp(x: Var, y: Expr, body: Expr) {
+        return new Apply(new Lambda(x, body), y);
+
+    }
+
+    class Apply implements Expr {
+        public f: Expr;
+        public arg: Expr;
+        public constructor(f: Expr, arg: Expr) {
+            this.f = f;
+            this.arg = arg;
+        }
+        public exec(): Expr {
+            if (this.f instanceof Var) {
+                return new Apply(this.f, this.arg.exec());
+            }
+
+            if (this.f instanceof Apply) {
+                return new Apply(this.f.exec(), this.arg);
+            } 
+             
+        return
+
+    }
+        public subst(x: Var, y: Expr): Expr {
+        return new Apply(new Lambda(x, this.f), new Lambda())
+    }
+    }
+
+    export class NotTerminating implements Expr {
+
+
+    }
+
+}

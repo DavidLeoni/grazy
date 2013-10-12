@@ -1,23 +1,4 @@
-﻿/* old
-.link {
-    stroke: #000;
-    stroke-width: 1.5px;
-}
-
-.node {
-    cursor: move;
-    fill: #ccc;
-    stroke: #000;
-    stroke-width: 1.5px;
-}
-
-    .node.fixed {
-        fill: #f00;
-    }
-
-*/
-
-
+﻿
 svg {
   background-color: #FFF;
   cursor: default;
@@ -44,8 +25,13 @@ svg:not(.active):not(.ctrl) path.link {
 }
 
 path.link.selected {
-  stroke-dasharray: 10,2;
+  stroke-opacity: 0.5;
 }
+
+path.link.reducer {
+    stroke-dasharray: 10,2;
+}
+
 
 path.link.dragline {
   pointer-events: none;
@@ -60,7 +46,7 @@ circle.node {
   cursor: pointer;
 }
 
-circle.node.reflexive {
+circle.node.sticky {
   stroke: #000 !important;
   stroke-width: 2.5px;
 }

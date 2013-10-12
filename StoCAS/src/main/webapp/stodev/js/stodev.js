@@ -1,11 +1,12 @@
 /// <reference path="../../stovis/test/js/d3-tests.ts" />
+/// <reference path="../../stovis/js/stovis.ts" />
 var Greeter = (function () {
     function Greeter(element) {
         this.element = element;
     }
     Greeter.prototype.start = function () {
         //d3Tests.testPieChart();
-        d3Tests.stickyEditor();
+        stovis.addEditor(this.element);
     };
     return Greeter;
 })();

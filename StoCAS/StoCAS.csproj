@@ -21,6 +21,8 @@
     <Content Include="libs\d3.v3.min.js" />
     <Content Include="nb-configuration.xml" />
     <Content Include="pom.xml" />
+    <TypeScriptCompile Include="src\main\webapp\stocore\js\stocore.ts" />
+    <Content Include="src\main\webapp\stocore\test\js\tsUnit.ts" />
     <Content Include="src\main\webapp\stodev\index.html" />
     <Content Include="src\main\webapp\stodev\styles\stodev.css" />
     <Content Include="src\main\webapp\stodev\js\stodev.js" />
@@ -28,8 +30,8 @@
     <Content Include="src\main\webapp\stovis\js\libs\d3\d3.d.ts" />
     <Content Include="src\main\webapp\stovis\js\libs\d3\d3.js" />
     <Content Include="src\main\webapp\stovis\js\libs\d3\d3.v3.js" />
-    <Content Include="src\main\webapp\stocore\js\stocas.js" />
-    <Content Include="src\main\webapp\stovis\js\stoviz.ts" />
+    <Content Include="src\main\webapp\stocore\js\stocore.js" />
+    <Content Include="src\main\webapp\stovis\js\stovis.ts" />
     <Content Include="src\main\webapp\META-INF\context.xml" />
     <Content Include="src\main\webapp\stovis\test\js\d3-tests.js" />
     <Content Include="src\main\webapp\stovis\test\js\d3-tests.ts" />
@@ -38,7 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="src\main\webapp\stodev\js\stodev.js.map" />
-    <Content Include="src\main\webapp\stocore\js\stocas.ts.broken" />
+    <Content Include="src\main\webapp\stocore\js\stocore.ts.broken" />
     <Content Include="src\main\webapp\stovis\test\data\data.csv" />
     <Content Include="src\main\webapp\stovis\test\js\d3-tests.js.map" />
     <Content Include="src\main\webapp\stovis\styles\stovis.css" />

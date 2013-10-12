@@ -1,4 +1,5 @@
 /// <reference path="../../stovis/test/js/d3-tests.ts" />
+/// <reference path="../../stovis/js/stovis.ts" />
 
 
 
@@ -14,7 +15,7 @@ class Greeter {
 
     start() {
         //d3Tests.testPieChart();        
-        d3Tests.stickyEditor();
+        stovis.addEditor(this.element);
     }
 
 }

@@ -6,3 +6,6 @@
 .import-temp/
 
 /private/
+
+/* VS stuff */
+/StoCAS/obj/

@@ -1,4 +1,5 @@
 /// <reference path="libs/d3/d3.d.ts" />
+/// <reference path="../../stocore/js/libs/jquery/jquery.d.ts" />
 /// <reference path="../../stocore/js/stocore.ts" />
 
 
@@ -12,7 +13,7 @@ module stovis {
     export var MAX_FIELD_LENGTH = 20000;
 
     /**
-        Experimental - Not using it. I keep it here to experiment about ui encapsulation/ web components / whatever 
+        Experimental - Not using it. Kept here to experiment about ui encapsulation/ web components / whatever 
     */
     class ExperimentalElem {
         private _backgroundColor: String;
@@ -54,7 +55,6 @@ module stovis {
         private arrows: Array<any>;
         private container: HTMLElement;
         private svg: any;
-        private lastNodeId: number;
         private force: D3.Layout.ForceLayout;
         private selected_node: any;
         private selected_link: any;
@@ -62,12 +62,15 @@ module stovis {
         private mousedown_node;
         private mouseup_node;
         private drag_line: any;
-        private path: any;
-        private circle: any;
+        private path: any; // to review
         private width: number;
         private height: number;
-        private colors: D3.Scale.OrdinalScale;
-        private lastKeyDown: number; // int
+        private outZoom: any;
+        private vis: any;
+        private scale: number;
+        private translate: Array<number>;
+        private link: any; // todo rename
+        private node: any; // todo rename
 
         private initArrows(): void {
             this.arrows = [];
@@ -115,58 +118,55 @@ module stovis {
 
         constructor(container: HTMLElement) {
             console.log("Beginning of Editor constructor ");
-            var self = this;
 
             this.container = container;
-            
 
+            this.width = 960;
+            this.height = 500;
 
-            var width = 960,
-                height = 500,
-                fill = d3.scale.category20();
 
             // mouse event vars
-            var selected_node = null,
-                selected_link = null,
-                mousedown_link = null,
-                mousedown_node = null,
-                mouseup_node = null;
+            this.selected_node = null,
+            this.selected_link = null,
+            this.mousedown_link = null,
+            this.mousedown_node = null,
+            this.mouseup_node = null;
 
             // init svg
-            var outer = d3.select(this.container)
+            this.svg = d3.select(this.container)
                 .append("svg:svg")
-                .attr("width", width)
-                .attr("height", height)
+                .attr("width", this.width)
+                .attr("height", this.height)
                 .attr("pointer-events", "all");
 
-            var outZoom = d3.behavior.zoom().on("zoom", rescale);
-            var translate = [0.0, 0.0];
-            var scale = 1.0;
-            var vis = outer
+            this.outZoom = d3.behavior.zoom().on("zoom", () => this.rescale());
+            this.translate = [0.0, 0.0];
+            this.scale = 1.0;
+            this.vis = this.svg
                 .append('svg:g')
-                .call(outZoom)
+                .call(this.outZoom)
                 .on("dblclick.zoom", null)
                 .append('svg:g')
-                .on("mousemove", mousemove)
-                .on("mousedown", mousedown)
-                .on("mouseup", mouseup);
+                .on("mousemove", () => this.mousemove())
+                .on("mousedown", () => this.mousedown())
+                .on("mouseup", () => this.mouseup());
 
-            vis.append('svg:rect')
-                .attr('width', width)
-                .attr('height', height)
+            this.vis.append('svg:rect')
+                .attr('width', this.width)
+                .attr('height', this.height)
                 .attr('fill', 'white');
 
             // init force layout
-            var force = d3.layout.force()
-                .size([width, height])
+            this.force = d3.layout.force()
+                .size([this.width, this.height])
                 .nodes([{}]) // initialize with a single node
                 .linkDistance(50)
                 .charge(-200)
-                .on("tick", tick);
+                .on("tick", () => this.tick());
 
 
             // line displayed when dragging new nodes
-            var drag_line = vis.append("line")
+            this.drag_line = this.vis.append("line")
                 .attr("class", "drag_line")
                 .attr("x1", 0)
                 .attr("y1", 0)
@@ -174,257 +174,252 @@ module stovis {
                 .attr("y2", 0);
 
             // get layout properties
-            var nodes = force.nodes(),
-                links = force.links(),
-                node = vis.selectAll(".node"),
-                link = vis.selectAll(".link");
+            this.node = this.vis.selectAll(".node"),
+            this.link = this.vis.selectAll(".link");
 
             // add keyboard callback
             d3.select(window)
-                .on("keydown", keydown);
+                .on("keydown", () => this.keydown());
 
-            // rescale g
-            function rescale() {
-                if (mousedown_node || mousedown_link) {
-                    // Revert the changes
-                    outZoom.scale(scale);
-                    outZoom.translate(translate);
-                    return;
-                } else {
 
-                    translate = d3.event.translate;
-                    scale = d3.event.scale;
 
-                    vis.attr("transform",
-                        "translate(" + translate + ")"
-                        + " scale(" + scale + ")");
-                }
-            }
-
-            redraw();
+            this.redraw();
 
             // focus on svg
             // vis.node().focus();
 
-            function mousedown() {
-                console.log("mousedown");
-                console.log("mousedown_node: ", mousedown_node);
-                console.log("mousedown_link: ", mousedown_link);
-                if (!mousedown_node && !mousedown_link) {
-                    console.log("We're allowing panning");
-                    // allow panning if nothing is selected
 
-
-                    //vis.call(d3.behavior.zoom().on("zoom"), rescale); 
-                    vis.call(d3.behavior.zoom().on("zoom", rescale));
-                    return;
-                } else {
-                    console.log("No panning");
-                    //vis.call(d3.behavior.zoom().on("zoom", null))
-                    
-               
-                }
-            }
-
-            function mousemove() {
-                //console.log("mousemove");
-                //console.log("mousedown_node: ", mousedown_node);
-                if (!mousedown_node) return;
-                var point = d3.mouse(self.container);
-                // update drag line
-                drag_line
-                    .attr("x1", mousedown_node.x)
-                    .attr("y1", mousedown_node.y)
-                    .attr("x2", point[0])
-                    .attr("y2", point[1]);
-
-            }
-
-            function mouseup() {
-                console.log("mouseup");
-                console.log("mousedown_node: ", mousedown_node);
-                if (mousedown_node) {
-                    // hide drag line
-                    drag_line
-                        .attr("class", "drag_line_hidden")
-
-    if (!mouseup_node) {
-                        // add node
-                        var point = d3.mouse(this),
-                            node = { x: point[0], y: point[1] },
-                            n = nodes.push(node);
-
-                        // select new node
-                        selected_node = node;
-                        selected_link = null;
-
-                        // add link to mousedown node
-                        links.push({ source: mousedown_node, target: node });
-                    }
-
-                    redraw();
-                }
-                // clear mouse event vars
-                resetMouseVars();
-            }
-
-            function resetMouseVars() {
-                mousedown_node = null;
-                mouseup_node = null;
-                mousedown_link = null;
-            }
-
-            function tick() {
-                link.attr("x1", function (d) { return d.source.x; })
-                    .attr("y1", function (d) { return d.source.y; })
-                    .attr("x2", function (d) { return d.target.x; })
-                    .attr("y2", function (d) { return d.target.y; });
-
-                node.attr("cx", function (d) { return d.x; })
-                    .attr("cy", function (d) { return d.y; });
-            }
-
-
-
-            // redraw force layout
-            function redraw() {
-
-                link = link.data(links);
-
-                link.enter().insert("line", ".node")
-                    .attr("class", "link")
-                    .on("mousedown",
-                    function (d) {
-                        mousedown_link = d;
-                        if (mousedown_link == selected_link) selected_link = null;
-                        else selected_link = mousedown_link;
-                        selected_node = null;
-                        redraw();
-                    })
-
-  link.exit().remove();
-
-                link
-                    .classed("link_selected", function (d) { return d === selected_link; });
-
-                node = node.data(nodes);
-
-                node.enter().insert("circle")
-                    .attr("class", "node")
-                    .attr("r", 5)
-                    .on("mousedown",
-                    function (d) {
-                        // disable zoom
-                        //vis.call(d3.behavior.zoom().on("zoom"), null);
-                        vis.call(d3.behavior.zoom().on("zoom", null));
-
-                        mousedown_node = d;
-                        if (mousedown_node == selected_node) selected_node = null;
-                        else selected_node = mousedown_node;
-                        selected_link = null;
-
-                        // reposition drag line
-                        drag_line
-                            .attr("class", "link")
-                            .attr("x1", mousedown_node.x)
-                            .attr("y1", mousedown_node.y)
-                            .attr("x2", mousedown_node.x)
-                            .attr("y2", mousedown_node.y);
-
-                        redraw();
-                    })
-                    .on("mousedrag",
-                    function (d) {
-                        console.log("mousedrag -redraw");
-                        // redraw();
-                    })
-                    .on("mouseup",
-                    function (d) {
-                        console.log("mouseup - redraw");
-                        console.log("mousedown_node: ", mousedown_node);
-                        if (mousedown_node) {
-                            mouseup_node = d;
-                            if (mouseup_node == mousedown_node) { resetMouseVars(); return; }
-
-                            // add link
-                            var link = { source: mousedown_node, target: mouseup_node };
-                            links.push(link);
-
-                            // select new link
-                            selected_link = link;
-                            selected_node = null;
-
-                            // enable zoom
-                            //vis.call(d3.behavior.zoom().on("zoom"), rescale);
-                            vis.call(d3.behavior.zoom().on("zoom", rescale))
-                            redraw();
-                        }
-                    })
-                    .transition()
-                    .duration(750)
-                    .ease("elastic")
-                    .attr("r", 6.5);
-
-                node.exit().transition()
-                    .attr("r", 0)
-                    .remove();
-
-                node
-                    .classed("node_selected", function (d) { return d === selected_node; });
-
-
-
-                if (d3.event) {
-                    // prevent browser's default behavior
-                    d3.event.preventDefault();
-                }
-
-                force.start();
-
-            }
-
-            function spliceLinksForNode(node) {
-                var toSplice = links.filter(
-                    function (l) {
-                        return (l.source === node) || (l.target === node);
-                    });
-                toSplice.map(
-                    function (l) {
-                        links.splice(links.indexOf(l), 1);
-                    });
-            }
-
-            function keydown() {
-                if (!selected_node && !selected_link) return;
-                switch (d3.event.keyCode) {
-                    case 8: // backspace
-                    case 46: { // delete
-                        if (selected_node) {
-                            nodes.splice(nodes.indexOf(selected_node), 1);
-                            spliceLinksForNode(selected_node);
-                        }
-                        else if (selected_link) {
-                            links.splice(links.indexOf(selected_link), 1);
-                        }
-                        selected_link = null;
-                        selected_node = null;
-                        redraw();
-                        break;
-                    }
-                }
-            }
             console.log("Done with Editor constructor");
         }
 
 
+        mousedown() {
+            console.log("mousedown");
+            console.log("mousedown_node: ", this.mousedown_node);
+            console.log("mousedown_link: ", this.mousedown_link);
+            if (!this.mousedown_node && !this.mousedown_link) {
+                console.log("We're allowing panning");
+                // allow panning if nothing is selected
+
+
+                //vis.call(d3.behavior.zoom().on("zoom"), rescale); 
+                this.vis.call(d3.behavior.zoom().on("zoom", () => this.rescale()));
+                return;
+            } else {
+                console.log("No panning");
+                //vis.call(d3.behavior.zoom().on("zoom", null))
+
+
+            }
+        }
+
+        mousemove() {
+            //console.log("mousemove");
+            //console.log("mousedown_node: ", mousedown_node);
+            if (!this.mousedown_node) return;
+            var point = d3.mouse($("svg g g")[0]);
+            // update drag line
+            this.drag_line
+                .attr("x1", this.mousedown_node.x)
+                .attr("y1", this.mousedown_node.y)
+                .attr("x2", point[0])
+                .attr("y2", point[1]);
+
+        }
+
+        mouseup() {
+            console.log("mouseup");
+            console.log("mousedown_node: ", this.mousedown_node);
+            if (this.mousedown_node) {
+                // hide drag line
+                this.drag_line
+                    .attr("class", "drag_line_hidden")
+
+                    if (!this.mouseup_node) {
+                    // add node
+                        var point = d3.mouse($("svg g g")[0]),
+                        newnode = { x: point[0], y: point[1] };
+
+                    this.force.nodes().push(newnode);
+
+                    // select new node
+                    this.selected_node = newnode;
+                    this.selected_link = null;
+
+                    // add link to mousedown node
+                    this.force.links().push({ source: this.mousedown_node, target: newnode });
+                }
+
+                this.redraw();
+            }
+            // clear mouse event vars
+            this.resetMouseVars();
+        }
+
+        resetMouseVars() {
+            this.mousedown_node = null;
+            this.mouseup_node = null;
+            this.mousedown_link = null;
+        }
+
+        tick() {
+            this.link.attr("x1", (d) => d.source.x)
+                .attr("y1", (d) => d.source.y)
+                .attr("x2", (d) => d.target.x)
+                .attr("y2", (d) => d.target.y);
+
+            this.node.attr("cx", (d) => d.x)
+                .attr("cy", (d) => d.y);
+        }
+
+        // redraw force layout
+        redraw() {
+
+            this.link = this.link.data(this.force.links());
+
+            this.link.enter().insert("line", ".node")
+                .attr("class", "link")
+                .on("mousedown",
+                (d) => {
+                    this.mousedown_link = d;
+                    if (this.mousedown_link == this.selected_link) this.selected_link = null;
+                    else this.selected_link = this.mousedown_link;
+                    this.selected_node = null;
+                    this.redraw();
+                })
+
+            this.link.exit().remove();
+
+            this.link
+                .classed("link_selected", (d) => (d === this.selected_link));
+
+            this.node = this.node.data(this.force.nodes());
+
+            this.node.enter().insert("circle")
+                .attr("class", "node")
+                .attr("r", 5)
+                .on("mousedown",
+                (d) => {
+                    // disable zoom
+                    //vis.call(d3.behavior.zoom().on("zoom"), null);
+                    this.vis.call(d3.behavior.zoom().on("zoom", null));
+
+                    this.mousedown_node = d;
+                    if (this.mousedown_node === this.selected_node) {
+                        this.selected_node = null;
+                    } else {
+                        this.selected_node = this.mousedown_node;
+                    }
+                    this.selected_link = null;
+
+                    // reposition drag line
+                    this.drag_line
+                        .attr("class", "link")
+                        .attr("x1", this.mousedown_node.x)
+                        .attr("y1", this.mousedown_node.y)
+                        .attr("x2", this.mousedown_node.x)
+                        .attr("y2", this.mousedown_node.y);
+
+                    this.redraw();
+                })
+                .on("mousedrag",
+                (d) => {
+                    console.log("mousedrag -redraw");
+                    // redraw();
+                })
+                .on("mouseup",
+                (d) => {
+                    console.log("mouseup - redraw");
+                    console.log("mousedown_node: ", this.mousedown_node);
+                    if (this.mousedown_node) {
+                        this.mouseup_node = d;
+                        if (this.mouseup_node == this.mousedown_node) {
+                            this.resetMouseVars(); return;
+                        }
+
+                        // add link
+                        var newlink = { source: this.mousedown_node, target: this.mouseup_node };
+                        this.force.links().push(newlink);
+
+                        // select new link
+                        this.selected_link = newlink;
+                        this.selected_node = null;
+
+                        // enable zoom
+                        //vis.call(d3.behavior.zoom().on("zoom"), rescale);
+                        this.vis.call(d3.behavior.zoom().on("zoom", () => this.rescale()))
+                        this.redraw();
+                    }
+                })
+                .transition()
+                .duration(750)
+                .ease("elastic")
+                .attr("r", 6.5);
+
+            this.node.exit().transition()
+                .attr("r", 0)
+                .remove();
+
+            this.node.classed("node_selected", (d) => (d === this.selected_node));
+
+
+
+            if (d3.event) {
+                // prevent browser's default behavior
+                d3.event.preventDefault();
+            }
+
+            console.log("force = ", this.force);
+            this.force.start();
+
+        }
+
+        spliceLinksForNode(node) {
+            var toSplice = this.force.links().filter(
+                (l) => ((l.source === node) || (l.target === node)));
+            toSplice.map((l) => this.force.links().splice(this.force.links().indexOf(l), 1));
+        }
+
+        keydown() {
+            if (!this.selected_node && !this.selected_link) return;
+            switch (d3.event.keyCode) {
+                case 8: // backspace
+                case 46: { // delete
+                    if (this.selected_node) {
+                        this.force.nodes().splice(this.force.nodes().indexOf(this.selected_node), 1);
+                        this.spliceLinksForNode(this.selected_node);
+                    }
+                    else if (this.selected_link) {
+                        this.force.links().splice(this.force.links().indexOf(this.selected_link), 1);
+                    }
+                    this.selected_link = null;
+                    this.selected_node = null;
+                    this.redraw();
+                    break;
+                }
+            }
+        }
+        // rescale g
+        rescale(): void {
+            if (this.mousedown_node || this.mousedown_link) {
+                // Revert the changes - hack to prevent panning thanks to http://stackoverflow.com/questions/19249587/nested-zooms-issue-in-d3, Phong Nguyen answer
+                this.outZoom.scale(this.scale);
+                this.outZoom.translate(this.translate);
+                return;
+            } else {
+
+                this.translate = d3.event.translate;
+                this.scale = d3.event.scale;
+
+                this.vis.attr("transform",
+                    "translate(" + this.translate + ")"
+                    + " scale(" + this.scale + ")");
+            }
+        }
     }
 
 
 
-    /**
-          sto new
-          example from http://rkirsling.github.io/modallogic/ thanks to Ross Kirsling
-      */
     export function addEditor(container: HTMLElement): Editor {
         return new Editor(container);
 

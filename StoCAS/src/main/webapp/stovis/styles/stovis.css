@@ -1,31 +1,27 @@
-﻿
-svg {
-  background-color: #FFF;
-  cursor: default;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  -o-user-select: none;
-  user-select: none;
-}
+﻿/*
+    Actually I hate CSS, especially the CASCADING aspect of it. So, ideally, this file should be as small as possible.
+*/
+
+
+
 
 svg:not(.active):not(.ctrl) {
-  cursor: crosshair;
+    cursor: crosshair;
 }
 
 path.link {
-  fill: none;
-  stroke: #000;
-  stroke-width: 4px;
-  cursor: default;
+    fill: none;
+    stroke: #ffbaba;
+    stroke-width: 4px;
+    cursor: default;
 }
 
 svg:not(.active):not(.ctrl) path.link {
-  cursor: pointer;
+    cursor: pointer;
 }
 
 path.link.selected {
-  stroke-opacity: 0.5;
+    stroke-opacity: 0.5;
 }
 
 path.link.reducer {
@@ -34,29 +30,29 @@ path.link.reducer {
 
 
 path.link.dragline {
-  pointer-events: none;
+    pointer-events: none;
 }
 
 path.link.hidden {
-  stroke-width: 0;
+    stroke-width: 0;
 }
 
 circle.node {
-  stroke-width: 1.5px;
-  cursor: pointer;
+    stroke-width: 1.5px;
+    cursor: pointer;
 }
 
-circle.node.sticky {
-  stroke: #000 !important;
-  stroke-width: 2.5px;
-}
+    circle.node.sticky {
+        stroke: #ffbaba !important;
+        stroke-width: 2.5px;
+    }
 
 text {
-  font: 12px sans-serif;
-  pointer-events: none;
+    font: 12px sans-serif;
+    pointer-events: none;
 }
 
 text.id {
-  text-anchor: middle;
-  font-weight: bold;
+    text-anchor: middle;
+    font-weight: bold;
 }

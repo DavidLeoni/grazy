@@ -3,10 +3,48 @@
 // Module
 var stovis;
 (function (stovis) {
+    stovis.DEFAULT_BACKGROUND_COLOR = "#2e2e2e";
+    stovis.DEFAULT_FILL_COLOR = "#ffbaba";
+    stovis.DEFAULT_STROKE_COLOR = "#ff7a7a";
+
+    /**
+    Experimental - Not using it. I keep it here to experiment about ui encapsulation/ web components / whatever
+    */
+    var ExperimentalElem = (function () {
+        function ExperimentalElem() {
+            this._backgroundColor = stovis.DEFAULT_BACKGROUND_COLOR;
+        }
+        Object.defineProperty(ExperimentalElem.prototype, "backgroundColor", {
+            get: function () {
+                return this._backgroundColor;
+            },
+            set: function (backgroundColor) {
+                this._backgroundColor = backgroundColor;
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+
+        Object.defineProperty(ExperimentalElem.prototype, "foregroundColor", {
+            get: function () {
+                return this._foregroundColor;
+            },
+            set: function (foregroundColor) {
+                this._foregroundColor = foregroundColor;
+            },
+            enumerable: true,
+            configurable: true
+        });
+
+        return ExperimentalElem;
+    })();
+
     var Editor = (function () {
         function Editor(container) {
             var _this = this;
             console.log("Beginning of Editor constructor ");
+
             this.container = container;
 
             // set up SVG for D3
@@ -14,9 +52,10 @@ var stovis;
             this.height = 500;
             this.colors = d3.scale.category10();
 
-            this.svg = d3.select('body').append('svg');
+            this.svg = d3.select('body').append('svg').attr('width', this.width).attr('height', this.height).attr("stroke", stovis.DEFAULT_STROKE_COLOR).attr("fill", stovis.DEFAULT_FILL_COLOR).style("cursor", "default").style("-webkit-user-select", "none").style("-moz-user-select", "none").style("-ms-user-select", "none").style("-o-user-select", "none").style("user-select", "none");
 
-            this.svg.attr('width', this.width).attr('height', this.height);
+            // silly way to set a background color, currently (Oct 2013) the 'good' one is not supported in Firefox http://www.w3.org/TR/SVGTiny12/painting.html#viewport-fill-property
+            this.svg.append('rect').attr("style", "fill:" + stovis.DEFAULT_BACKGROUND_COLOR).attr("width", "100%").attr("height", "100%");
 
             console.log("svg = ", this.svg);
 
@@ -81,14 +120,14 @@ var stovis;
 
             // single arrow
             // define arrow markers for graph links
-            this.arrows.push(this.svg.append('svg:defs').append('svg:marker').attr('id', 'arrow-1').attr('viewBox', '0 -5 10 10').attr('refX', 6).attr('markerWidth', 3).attr('markerHeight', 3).attr('orient', 'auto').append('svg:path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#000'));
+            this.arrows.push(this.svg.append('svg:defs').append('svg:marker').attr('id', 'arrow-1').attr('viewBox', '0 -5 10 10').attr('refX', 6).attr('markerWidth', 3).attr('markerHeight', 3).attr('orient', 'auto').append('svg:path').attr('d', 'M0,-5L10,0L0,5').attr('fill', 'context-fill'));
 
             // double arrow
             this.arrows.push(this.svg.append('svg:defs').append('svg:marker'));
 
-            this.arrows[2].attr('id', 'arrow-2').attr('viewBox', '0 -5 20 20').attr('refX', 17).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto').append('svg:path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#000');
+            this.arrows[2].attr('id', 'arrow-2').attr('viewBox', '0 -5 20 20').attr('refX', 17).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto').append('svg:path').attr('d', 'M0,-5L10,0L0,5').attr('fill', 'context-fill');
 
-            this.arrows[2].append('svg:path').attr('d', 'M10,-5L20,0L10,5').attr('fill', '#000');
+            this.arrows[2].append('svg:path').attr('d', 'M10,-5L20,0L10,5').attr('fill', 'context-fill');
         };
 
         Editor.prototype.resetMouseVars = function () {
@@ -195,7 +234,7 @@ else
 
             // update existing nodes (sticky & selected visual states)
             this.circle.selectAll('circle').style('fill', function (d) {
-                return (d === _this.selected_node) ? d3.rgb(_this.colors(d.id)).brighter().toString() : _this.colors(d.id);
+                return (d === _this.selected_node) ? d3.rgb(stovis.DEFAULT_BACKGROUND_COLOR).brighter().toString() : stovis.DEFAULT_BACKGROUND_COLOR;
             }).classed('sticky', function (d) {
                 return d.sticky;
             });
@@ -204,9 +243,9 @@ else
             var g = this.circle.enter().append('svg:g');
 
             g.append('svg:circle').attr('class', 'node').attr('r', 12).style('fill', function (d) {
-                return (d === _this.selected_node) ? d3.rgb(_this.colors(d.id)).brighter().toString() : _this.colors(d.id);
+                return (d === _this.selected_node) ? d3.rgb(stovis.DEFAULT_BACKGROUND_COLOR).brighter().toString() : stovis.DEFAULT_BACKGROUND_COLOR;
             }).style('stroke', function (d) {
-                return d3.rgb(_this.colors(d.id)).darker().toString();
+                return d3.rgb(stovis.DEFAULT_STROKE_COLOR).darker().toString();
             }).classed('sticky', function (d) {
                 return d.sticky;
             }).on('mouseover', function (d) {

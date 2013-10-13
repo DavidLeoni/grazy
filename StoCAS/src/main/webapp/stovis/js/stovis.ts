@@ -5,9 +5,43 @@
 // Module
 module stovis {
 
+    export var DEFAULT_BACKGROUND_COLOR = "#2e2e2e";
+    export var DEFAULT_FILL_COLOR = "#ffbaba";
+    export var DEFAULT_STROKE_COLOR = "#ff7a7a";
+
+    /**
+        Experimental - Not using it. I keep it here to experiment about ui encapsulation/ web components / whatever 
+    */
+    class ExperimentalElem {
+        private _backgroundColor: String;
+        private _foregroundColor: String;
+        constructor() {
+            this._backgroundColor = DEFAULT_BACKGROUND_COLOR;
+        }
+
+        get backgroundColor(): String {
+            return this._backgroundColor;
+        }
+
+        set backgroundColor(backgroundColor: String) {
+            this._backgroundColor = backgroundColor;
+        }
+
+        get foregroundColor(): String {
+            return this._foregroundColor;
+        }
+
+        set foregroundColor(foregroundColor: String) {
+            this._foregroundColor = foregroundColor;
+        }
+
+
+    }
+
 
 
     export class Editor {
+
         /** 
             Labels to put on nodes 
         */
@@ -35,7 +69,7 @@ module stovis {
         private colors: D3.Scale.OrdinalScale;
         private lastKeyDown: number; // int
 
-        private initArrows() {
+        private initArrows(): void {
             this.arrows = [];
             // no arrow
             this.arrows.push(this.svg.append('svg:defs').append('svg:marker')
@@ -58,7 +92,7 @@ module stovis {
                 .attr('orient', 'auto')
                 .append('svg:path')
                 .attr('d', 'M0,-5L10,0L0,5')
-                .attr('fill', '#000'));
+                .attr('fill', 'context-fill'));
 
 
             // double arrow
@@ -72,15 +106,16 @@ module stovis {
                 .attr('orient', 'auto')
                 .append('svg:path')
                 .attr('d', 'M0,-5L10,0L0,5')
-                .attr('fill', '#000')
+                .attr('fill', 'context-fill')
 
             this.arrows[2].append('svg:path')
                 .attr('d', 'M10,-5L20,0L10,5') //M Move, L = LineTo  Capital = absolute
-                .attr('fill', '#000');
+                .attr('fill', 'context-fill');
         }
 
         constructor(container: HTMLElement) {
             console.log("Beginning of Editor constructor ");
+
             this.container = container;
 
             // set up SVG for D3
@@ -88,17 +123,28 @@ module stovis {
             this.height = 500;
             this.colors = d3.scale.category10();
 
-            this.svg = d3.select('body')
-                .append('svg');
 
-            this.svg.attr('width', this.width)
-                .attr('height', this.height);
+
+            this.svg = d3.select('body')
+                .append('svg')
+                .attr('width', this.width)
+                .attr('height', this.height)
+                .attr("stroke", DEFAULT_STROKE_COLOR)
+                .attr("fill", DEFAULT_FILL_COLOR)
+                .style("cursor", "default")
+                .style("-webkit-user-select", "none")
+                .style("-moz-user-select", "none")
+                .style("-ms-user-select", "none")
+                .style("-o-user-select", "none")
+                .style("user-select", "none");
+
+            // silly way to set a background color, currently (Oct 2013) the 'good' one is not supported in Firefox http://www.w3.org/TR/SVGTiny12/painting.html#viewport-fill-property
+            this.svg.append('rect').attr("style", "fill:" + DEFAULT_BACKGROUND_COLOR).attr("width", "100%").attr("height", "100%");
+
 
             console.log("svg = ", this.svg);
 
             this.initArrows();
-
-
 
 
             // set up initial nodes and links
@@ -137,6 +183,7 @@ module stovis {
             this.circle = this.svg.append('svg:g').selectAll('g');
 
 
+
             // mouse event vars
             this.selected_node = null;
             this.selected_link = null;
@@ -148,12 +195,12 @@ module stovis {
             this.lastKeyDown = -1;
 
             // app starts here
-            this.svg.on('mousedown', ()=>this.mousedown())
-                .on('mousemove', ()=> this.mousemove())
-                .on('mouseup', ()=>this.mouseup());
+            this.svg.on('mousedown', () => this.mousedown())
+                .on('mousemove', () => this.mousemove())
+                .on('mouseup', () => this.mouseup());
             d3.select(window)
-                .on('keydown', ()=>this.keydown())
-                .on('keyup', ()=>this.keyup());
+                .on('keydown', () => this.keydown())
+                .on('keyup', () => this.keyup());
             this.restart();
             console.log("Done with Editor constructor");
         }
@@ -270,7 +317,7 @@ module stovis {
 
             // update existing nodes (sticky & selected visual states)
             this.circle.selectAll('circle')
-                .style('fill', (d) => (d === this.selected_node) ? d3.rgb(this.colors(d.id)).brighter().toString() : this.colors(d.id))
+                .style('fill', (d) => (d === this.selected_node) ? d3.rgb(DEFAULT_BACKGROUND_COLOR).brighter().toString() : DEFAULT_BACKGROUND_COLOR)
                 .classed('sticky', (d) => d.sticky);
 
             // add new nodes
@@ -280,8 +327,8 @@ module stovis {
             g.append('svg:circle')
                 .attr('class', 'node')
                 .attr('r', 12)
-                .style('fill', (d) => (d === this.selected_node) ? d3.rgb(this.colors(d.id)).brighter().toString() : this.colors(d.id))
-                .style('stroke', (d) => d3.rgb(this.colors(d.id)).darker().toString())
+                .style('fill', (d) => (d === this.selected_node) ? d3.rgb(DEFAULT_BACKGROUND_COLOR).brighter().toString() : DEFAULT_BACKGROUND_COLOR)
+                .style('stroke', (d) => d3.rgb(DEFAULT_STROKE_COLOR).darker().toString())
                 .classed('sticky', (d) => d.sticky)
                 .on('mouseover', function (d) {
                     if (!self.mousedown_node || d === self.mousedown_node) return;

@@ -7,6 +7,9 @@ var stovis;
     stovis.DEFAULT_FILL_COLOR = "#ffbaba";
     stovis.DEFAULT_STROKE_COLOR = "#ff7a7a";
 
+    /** max field size in pixel */
+    stovis.MAX_FIELD_LENGTH = 20000;
+
     /**
     Experimental - Not using it. I keep it here to experiment about ui encapsulation/ web components / whatever
     */
@@ -52,10 +55,15 @@ var stovis;
             this.height = 500;
             this.colors = d3.scale.category10();
 
-            this.svg = d3.select('body').append('svg').attr('width', this.width).attr('height', this.height).attr("stroke", stovis.DEFAULT_STROKE_COLOR).attr("fill", stovis.DEFAULT_FILL_COLOR).style("cursor", "default").style("-webkit-user-select", "none").style("-moz-user-select", "none").style("-ms-user-select", "none").style("-o-user-select", "none").style("user-select", "none");
+            this.svg = d3.select('body').append('svg').attr('width', this.width).attr('height', this.height).attr("stroke", stovis.DEFAULT_STROKE_COLOR).attr("fill", stovis.DEFAULT_FILL_COLOR).style("cursor", "default").style("-webkit-user-select", "none").style("-moz-user-select", "none").style("-ms-user-select", "none").style("-o-user-select", "none").style("user-select", "none").append("g").call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", function () {
+                return _this.zoom();
+            })).on("dblclick.zoom", null).on("mousedown.zoom", null).on("touchstart.zoom", null).on("touchmove.zoom", null).on("touchend.zoom", null).append("g");
 
             // silly way to set a background color, currently (Oct 2013) the 'good' one is not supported in Firefox http://www.w3.org/TR/SVGTiny12/painting.html#viewport-fill-property
-            this.svg.append('rect').attr("style", "fill:" + stovis.DEFAULT_BACKGROUND_COLOR).attr("width", "100%").attr("height", "100%");
+            var sideLength = stovis.MAX_FIELD_LENGTH.toString() + "px";
+            var displacement = (-Math.floor(stovis.MAX_FIELD_LENGTH / 2)).toString() + "px";
+
+            this.svg.append('rect').attr("style", "fill:" + stovis.DEFAULT_BACKGROUND_COLOR).attr("width", sideLength).attr("height", sideLength).attr("x", displacement).attr("y", displacement);
 
             console.log("svg = ", this.svg);
 
@@ -63,12 +71,12 @@ var stovis;
 
             // set up initial nodes and links
             //  - nodes are known by 'id', not by index in array.
-            //  - sticky edges are indicated on the node (as a bold black circle).
+            //  - fixed edges are indicated on the node (as a bold black circle).
             //  - links are always source < target; edge directions are set by 'left' and 'right'.
             this.nodes = [
-                { id: 0, sticky: false },
-                { id: 1, sticky: true },
-                { id: 2, sticky: false }
+                { id: 0, fixed: false },
+                { id: 1, fixed: true },
+                { id: 2, fixed: false }
             ];
             this.lastNodeId = 2, this.links = [
                 { source: this.nodes[0], target: this.nodes[1], left: false, right: true },
@@ -86,6 +94,14 @@ var stovis;
             // handles to link and node element groups
             this.path = this.svg.append('svg:g').selectAll('path'), this.circle = this.svg.append('svg:g').selectAll('g');
 
+            // zooming start
+            /*
+            svg.append("rect")
+            .attr("class", "overlay")
+            .attr("width", width)
+            .attr("height", height);
+            */
+            // zooming end
             // mouse event vars
             this.selected_node = null;
             this.selected_link = null;
@@ -130,6 +146,10 @@ var stovis;
             this.arrows[2].append('svg:path').attr('d', 'M10,-5L20,0L10,5').attr('fill', 'context-fill');
         };
 
+        Editor.prototype.zoom = function () {
+            this.svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+        };
+
         Editor.prototype.resetMouseVars = function () {
             this.mousedown_node = null;
             this.mouseup_node = null;
@@ -162,7 +182,7 @@ var stovis;
 
             // insert new node at point
             console.log("inserting new node");
-            var point = d3.mouse(this.container), node = { id: ++this.lastNodeId, sticky: false };
+            var point = d3.mouse(this.container), node = { id: ++this.lastNodeId, fixed: false };
             node.x = point[0];
             node.y = point[1];
             this.nodes.push(node);
@@ -232,11 +252,11 @@ else
                 return d.id;
             });
 
-            // update existing nodes (sticky & selected visual states)
+            // update existing nodes (fixed & selected visual states)
             this.circle.selectAll('circle').style('fill', function (d) {
                 return (d === _this.selected_node) ? d3.rgb(stovis.DEFAULT_BACKGROUND_COLOR).brighter().toString() : stovis.DEFAULT_BACKGROUND_COLOR;
-            }).classed('sticky', function (d) {
-                return d.sticky;
+            }).classed('fixed', function (d) {
+                return d.fixed;
             });
 
             // add new nodes
@@ -246,8 +266,8 @@ else
                 return (d === _this.selected_node) ? d3.rgb(stovis.DEFAULT_BACKGROUND_COLOR).brighter().toString() : stovis.DEFAULT_BACKGROUND_COLOR;
             }).style('stroke', function (d) {
                 return d3.rgb(stovis.DEFAULT_STROKE_COLOR).darker().toString();
-            }).classed('sticky', function (d) {
-                return d.sticky;
+            }).classed('fixed', function (d) {
+                return d.fixed;
             }).on('mouseover', function (d) {
                 if (!self.mousedown_node || d === self.mousedown_node)
                     return;
@@ -393,7 +413,7 @@ else
                     break;
                 case 82:
                     if (this.selected_node) {
-                        this.selected_node.sticky = !this.selected_node.sticky;
+                        this.selected_node.fixed = !this.selected_node.fixed;
                     } else if (this.selected_link) {
                         // set link direction to right only
                         this.selected_link.left = false;

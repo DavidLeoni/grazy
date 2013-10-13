@@ -8,6 +8,8 @@ module stovis {
     export var DEFAULT_BACKGROUND_COLOR = "#2e2e2e";
     export var DEFAULT_FILL_COLOR = "#ffbaba";
     export var DEFAULT_STROKE_COLOR = "#ff7a7a";
+    /** max field size in pixel */
+    export var MAX_FIELD_LENGTH = 20000;
 
     /**
         Experimental - Not using it. I keep it here to experiment about ui encapsulation/ web components / whatever 
@@ -136,10 +138,20 @@ module stovis {
                 .style("-moz-user-select", "none")
                 .style("-ms-user-select", "none")
                 .style("-o-user-select", "none")
-                .style("user-select", "none");
+                .style("user-select", "none")
+                .append("g")
+                .call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", () => this.zoom())).on("dblclick.zoom", null)
+                .on("mousedown.zoom", null)
+                .on("touchstart.zoom", null)
+                .on("touchmove.zoom", null)
+                .on("touchend.zoom", null)
+                .append("g");
 
             // silly way to set a background color, currently (Oct 2013) the 'good' one is not supported in Firefox http://www.w3.org/TR/SVGTiny12/painting.html#viewport-fill-property
-            this.svg.append('rect').attr("style", "fill:" + DEFAULT_BACKGROUND_COLOR).attr("width", "100%").attr("height", "100%");
+            var sideLength = MAX_FIELD_LENGTH.toString() + "px";
+            var displacement = (-Math.floor(MAX_FIELD_LENGTH / 2)).toString() + "px";
+            
+            this.svg.append('rect').attr("style", "fill:" + DEFAULT_BACKGROUND_COLOR).attr("width", sideLength).attr("height", sideLength).attr("x", displacement).attr("y", displacement);
 
 
             console.log("svg = ", this.svg);
@@ -149,12 +161,12 @@ module stovis {
 
             // set up initial nodes and links
             //  - nodes are known by 'id', not by index in array.
-            //  - sticky edges are indicated on the node (as a bold black circle).
+            //  - fixed edges are indicated on the node (as a bold black circle).
             //  - links are always source < target; edge directions are set by 'left' and 'right'.
             this.nodes = [
-                { id: 0, sticky: false },
-                { id: 1, sticky: true },
-                { id: 2, sticky: false }
+                { id: 0, fixed: false },
+                { id: 1, fixed: true },
+                { id: 2, fixed: false }
             ];
             this.lastNodeId = 2,
             this.links = [
@@ -182,7 +194,20 @@ module stovis {
             this.path = this.svg.append('svg:g').selectAll('path'),
             this.circle = this.svg.append('svg:g').selectAll('g');
 
+            // zooming start
 
+ 
+
+            /*
+            svg.append("rect")
+                .attr("class", "overlay")
+                .attr("width", width)
+                .attr("height", height);
+            */
+
+
+
+            // zooming end
 
             // mouse event vars
             this.selected_node = null;
@@ -203,6 +228,10 @@ module stovis {
                 .on('keyup', () => this.keyup());
             this.restart();
             console.log("Done with Editor constructor");
+        }
+
+        zoom() {
+            this.svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
         }
 
         resetMouseVars() {
@@ -230,6 +259,7 @@ module stovis {
             });
 
             this.circle.attr('transform', (d) => 'translate(' + d.x + ',' + d.y + ')');
+                            
 
         }
 
@@ -248,7 +278,7 @@ module stovis {
             // insert new node at point
             console.log("inserting new node");
             var point = d3.mouse(this.container),
-                node = { id: ++this.lastNodeId, sticky: false };
+                node = { id: ++this.lastNodeId, fixed: false };
             node.x = point[0];
             node.y = point[1];
             this.nodes.push(node);
@@ -315,10 +345,10 @@ module stovis {
             // NB: the function arg is crucial here! nodes are known by id, not by index!
             this.circle = this.circle.data(this.nodes, (d) => d.id);
 
-            // update existing nodes (sticky & selected visual states)
+            // update existing nodes (fixed & selected visual states)
             this.circle.selectAll('circle')
                 .style('fill', (d) => (d === this.selected_node) ? d3.rgb(DEFAULT_BACKGROUND_COLOR).brighter().toString() : DEFAULT_BACKGROUND_COLOR)
-                .classed('sticky', (d) => d.sticky);
+                .classed('fixed', (d) => d.fixed);
 
             // add new nodes
             var g = this.circle.enter().append('svg:g');
@@ -329,7 +359,7 @@ module stovis {
                 .attr('r', 12)
                 .style('fill', (d) => (d === this.selected_node) ? d3.rgb(DEFAULT_BACKGROUND_COLOR).brighter().toString() : DEFAULT_BACKGROUND_COLOR)
                 .style('stroke', (d) => d3.rgb(DEFAULT_STROKE_COLOR).darker().toString())
-                .classed('sticky', (d) => d.sticky)
+                .classed('fixed', (d) => d.fixed)
                 .on('mouseover', function (d) {
                     if (!self.mousedown_node || d === self.mousedown_node) return;
                     // enlarge target node
@@ -472,7 +502,7 @@ module stovis {
                     break;
                 case 82: // R
                     if (this.selected_node) {
-                        this.selected_node.sticky = !this.selected_node.sticky;
+                        this.selected_node.fixed = !this.selected_node.fixed;
                     } else if (this.selected_link) {
                         // set link direction to right only
                         this.selected_link.left = false;

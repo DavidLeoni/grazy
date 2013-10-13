@@ -42,7 +42,7 @@ circle.node {
     cursor: pointer;
 }
 
-    circle.node.sticky {
+    circle.node.fixed {
         stroke: #ffbaba !important;
         stroke-width: 2.5px;
     }

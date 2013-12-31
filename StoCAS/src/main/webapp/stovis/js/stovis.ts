@@ -1,11 +1,36 @@
-/// <reference path="libs/d3/d3.d.ts" />
+
 /// <reference path="../../stocore/js/libs/jquery/jquery.d.ts" />
 /// <reference path="../../stocore/js/stocore.ts" />
 
 
+
+/*global TurbulenzEngine: true */
+/*global TurbulenzServices: false */
+/*global RequestHandler: false */
+/*global Physics2DDevice: false */
+/*global Draw2D: false */
+/*global Draw2DSprite: false */
+/*global Physics2DDebugDraw: false */
+/*global HTMLControls: false */
+
+/// <reference path="libs/turbulenz-0.27/jslib-modular/turbulenz.d.ts" />
+/// <reference path="libs/turbulenz-0.27/jslib-modular/servicedatatypes.d.ts" />
+/// <reference path="libs/turbulenz-0.27/jslib-modular/services.d.ts" />
+/// <reference path="libs/turbulenz-0.27/jslib-modular/aabbtree.d.ts" />
+/// <reference path="libs/turbulenz-0.27/jslib-modular/jsengine_base.d.ts" />
+/// <reference path="libs/turbulenz-0.27/jslib-modular/jsengine.d.ts" />
+/// <reference path="libs/turbulenz-0.27/jslib-modular/utilities.d.ts" />
+
+/// <reference path="libs/turbulenz-0.27/jslib-modular/tzdraw2d.d.ts" />
+/// <reference path="libs/turbulenz-0.27/jslib-modular/physics2d.d.ts" />
+/// <reference path="htmlcontrols.ts" />
+
+// Could not find definition in typescript files
+declare var WebGLTurbulenzEngine: any;
+
 // Module
 module stovis {
-
+    
     export var DEFAULT_BACKGROUND_COLOR = "#2e2e2e";
     export var DEFAULT_FILL_COLOR = "#ffbaba";
     export var DEFAULT_STROKE_COLOR = "#ff7a7a";
@@ -16,28 +41,6 @@ module stovis {
         Experimental - Not using it. Kept here to experiment about ui encapsulation/ web components / whatever 
     */
     class ExperimentalElem {
-        private _backgroundColor: String;
-        private _foregroundColor: String;
-        constructor() {
-            this._backgroundColor = DEFAULT_BACKGROUND_COLOR;
-        }
-
-        get backgroundColor(): String {
-            return this._backgroundColor;
-        }
-
-        set backgroundColor(backgroundColor: String) {
-            this._backgroundColor = backgroundColor;
-        }
-
-        get foregroundColor(): String {
-            return this._foregroundColor;
-        }
-
-        set foregroundColor(foregroundColor: String) {
-            this._foregroundColor = foregroundColor;
-        }
-
 
     }
 
@@ -48,376 +51,616 @@ module stovis {
         /** 
             Labels to put on nodes 
         */
-        static labels: Array<String> = ["L", "[]", "head", "tail"];
-        /** 
-            Arrow markers for graph links
-        */
-        private arrows: Array<any>;
-        private container: HTMLElement;
-        private svg: any;
-        private force: D3.Layout.ForceLayout;
-        private selected_node: any;
-        private selected_link: any;
-        private mousedown_link;
-        private mousedown_node;
-        private mouseup_node;
-        private drag_line: any;
-        private path: any; // to review
-        private width: number;
-        private height: number;
-        private outZoom: any;
-        private vis: any;
-        private scale: number;
-        private translate: Array<number>;
-        private link: any; // todo rename
-        private node: any; // todo rename
-
-        private initArrows(): void {
-            this.arrows = [];
-            // no arrow
-            this.arrows.push(this.svg.append('svg:defs').append('svg:marker')
-                .attr('id', 'arrow-0')
-                .attr('viewBox', '0 -5 10 10')
-                .attr('refX', 6)
-                .attr('markerWidth', 3)
-                .attr('markerHeight', 3)
-                .attr('orient', 'auto'));
+        static labels: Array<string> = ["L", "[]", "head", "tail"];
 
 
-            // single arrow
-            // define arrow markers for graph links
-            this.arrows.push(this.svg.append('svg:defs').append('svg:marker')
-                .attr('id', 'arrow-1')
-                .attr('viewBox', '0 -5 10 10')
-                .attr('refX', 6)
-                .attr('markerWidth', 3)
-                .attr('markerHeight', 3)
-                .attr('orient', 'auto')
-                .append('svg:path')
-                .attr('d', 'M0,-5L10,0L0,5')
-                .attr('fill', 'context-fill'));
+    constructor(container: HTMLElement) {
+            console.log("Beginning of Editor constructor... ");
+
+        var canvasSupported = true;
+        (function () {
+            var contextNames = ["webgl", "experimental-webgl"];
+            var context = null;
+            var canvas = document.createElement('canvas');
+
+            document.body.appendChild(canvas);
+
+            for (var i = 0; i < contextNames.length; i += 1) {
+                try {
+                    context = canvas.getContext(contextNames[i]);
+                } catch (e) { }
+
+                if (context) {
+                    break;
+                }
+            }
+            if (!context) {
+                canvasSupported = false;
+                window.alert("Sorry, but your browser does not support WebGL or does not have it enabled.");
+            }
+
+            document.body.removeChild(canvas);
+        } ());
+        
 
 
-            // double arrow
-            this.arrows.push(this.svg.append('svg:defs').append('svg:marker'));
+        TurbulenzEngine.onload = function onloadFn() {
+            //==========================================================================
+            // HTML Controls
+            //==========================================================================
+            var htmlControls;
 
-            this.arrows[2].attr('id', 'arrow-2')
-                .attr('viewBox', '0 -5 20 20')  // first two numbers are start position, next are width and height
-                .attr('refX', 17)   // entrance point before the line
-                .attr('markerWidth', 6)
-                .attr('markerHeight', 6)
-                .attr('orient', 'auto')
-                .append('svg:path')
-                .attr('d', 'M0,-5L10,0L0,5')
-                .attr('fill', 'context-fill')
+            var debugEnabled = false;
+            var contactsEnabled = false;
 
-            this.arrows[2].append('svg:path')
-                .attr('d', 'M10,-5L20,0L10,5') //M Move, L = LineTo  Capital = absolute
-                .attr('fill', 'context-fill');
+            //==========================================================================
+            // Turbulenz Initialization
+            //==========================================================================
+
+            var graphicsDevice = TurbulenzEngine.createGraphicsDevice({});
+            var mathDevice = TurbulenzEngine.createMathDevice({});
+            var requestHandler = RequestHandler.create({});
+
+            var draw2DTexture;
+            var gameSession;
+            function sessionCreated(gameSession) {
+                TurbulenzServices.createMappingTable(
+                    requestHandler,
+                    gameSession,
+                    function (table) {
+                        graphicsDevice.createTexture({
+                            src: table.getURL("textures/physics2d.png"),
+                            mipmaps: true,
+                            onload: function (texture) {
+                                if (texture) {
+                                    draw2DTexture = texture;
+                                }
+                            }
+                        });
+                    }
+                    );
+            }
+            gameSession = TurbulenzServices.createGameSession(requestHandler, sessionCreated);
+
+            //==========================================================================
+            // Physics2D/Draw2D
+            //==========================================================================
+
+            // set up.
+            var phys2D = Physics2DDevice.create();
+
+            // size of physics stage.
+            var stageWidth = 30; // meters
+            var stageHeight = 22; // meters
+
+            var draw2D = Draw2D.create({
+                graphicsDevice: graphicsDevice
+            });
+            var debug = Physics2DDebugDraw.create({
+                graphicsDevice: graphicsDevice
+            });
+
+            // Configure draw2D viewport to the physics stage.
+            // As well as the physics2D debug-draw viewport.
+            draw2D.configure({
+                viewportRectangle: [0, 0, stageWidth, stageHeight],
+                scaleMode: 'scale'
+            });
+            debug.setPhysics2DViewport([0, 0, stageWidth, stageHeight]);
+
+            var world = phys2D.createWorld({
+                gravity: [0, 20] // 20 meters/s^2
+            });
+
+            var rubberMaterial = phys2D.createMaterial({
+                elasticity: 0.9,
+                staticFriction: 6,
+                dynamicFriction: 4,
+                rollingFriction: 0.001
+            });
+
+            var heavyMaterial = phys2D.createMaterial({
+                density: 3
+            });
+
+            var conveyorBeltMaterial = phys2D.createMaterial({
+                elasticity: 0,
+                staticFriction: 10,
+                dynamicFriction: 8,
+                rollingFriction: 0.1
+            });
+
+            var shapeSize = 0.8;
+            var shapeFactory: Physics2DShape[] = [
+                phys2D.createCircleShape({
+                    radius: (shapeSize / 2),
+                    material: rubberMaterial
+                }),
+                phys2D.createPolygonShape({
+                    vertices: phys2D.createBoxVertices(shapeSize, shapeSize),
+                    material: heavyMaterial
+                }),
+                phys2D.createPolygonShape({
+                    vertices: phys2D.createRegularPolygonVertices(shapeSize, shapeSize, 3),
+                    material: heavyMaterial
+                }),
+                phys2D.createPolygonShape({
+                    vertices: phys2D.createRegularPolygonVertices(shapeSize, shapeSize, 6),
+                    material: rubberMaterial
+                })
+            ];
+
+            // texture rectangles for above shapes.
+            var textureRectangles = [
+                [130, 130, 255, 255],
+                [5, 132, 125, 252],
+                [131, 3, 251, 123],
+                [5, 5, 125, 125]
+            ];
+
+            // Create a static body at (0, 0) with no rotation
+            // which we add to the world to use as the first body
+            // in hand constraint. We set anchor for this body
+            // as the cursor position in physics coordinates.
+            var handReferenceBody = phys2D.createRigidBody({
+                type: 'static'
+            });
+            world.addRigidBody(handReferenceBody);
+            var handConstraint = null;
+
+            var animationState = 0;
+            var lift;
+            var pusher;
+
+            function reset() {
+                // Remove all bodies and constraints from world.
+                world.clear();
+                handConstraint = null;
+
+                // Create a static border body around the stage to stop objects leaving the viewport.
+                var thickness = 0.01; // 1 cm
+                var border = phys2D.createRigidBody({
+                    type: 'static',
+                    shapes: [
+                        phys2D.createPolygonShape({
+                            vertices: phys2D.createRectangleVertices(0, 0, thickness, stageHeight)
+                        }),
+                        phys2D.createPolygonShape({
+                            vertices: phys2D.createRectangleVertices(0, 0, stageWidth, thickness)
+                        }),
+                        phys2D.createPolygonShape({
+                            vertices: phys2D.createRectangleVertices((stageWidth - thickness), 0, stageWidth, stageHeight)
+                        }),
+                        phys2D.createPolygonShape({
+                            vertices: phys2D.createRectangleVertices(0, (stageHeight - thickness), stageWidth, stageHeight)
+                        })
+                    ]
+                });
+                world.addRigidBody(border);
+
+                var createBelt = function createBeltFn(x1, y1, x2, y2, radius, speed) {
+                    var normal = mathDevice.v2Build(y2 - y1, x1 - x2);
+                    mathDevice.v2ScalarMul(normal, radius / mathDevice.v2Length(normal), normal);
+
+                    var shapes: Physics2DShape[] = [
+                        phys2D.createPolygonShape({
+                            vertices: [
+                                [x1 + normal[0], y1 + normal[1]],
+                                [x2 + normal[0], y2 + normal[1]],
+                                [x2 - normal[0], y2 - normal[1]],
+                                [x1 - normal[0], y1 - normal[1]]
+                            ],
+                            material: conveyorBeltMaterial
+                        }),
+                        phys2D.createCircleShape({
+                            radius: radius,
+                            origin: [x1, y1],
+                            material: conveyorBeltMaterial
+                        }),
+                        phys2D.createCircleShape({
+                            radius: radius,
+                            origin: [x2, y2],
+                            material: conveyorBeltMaterial
+                        })
+                    ];
+                    var body = phys2D.createRigidBody({
+                        type: 'static',
+                        surfaceVelocity: [speed, 0],
+                        shapes: shapes,
+                    });
+
+                    return body;
+                };
+
+                var belt;
+                belt = createBelt(0, 11, 7, 14, 0.5, 2);
+                world.addRigidBody(belt);
+
+                belt = createBelt(7, 14, 14, 11, 0.5, 2);
+                world.addRigidBody(belt);
+
+                belt = createBelt(12, 19, 20.5, 17, 0.5, 2);
+                world.addRigidBody(belt);
+
+                belt = createBelt(20.5, 10.5, 10, 5, 0.5, -2);
+                world.addRigidBody(belt);
+
+                belt = createBelt(10, 5, 5, 5, 0.5, -2);
+                world.addRigidBody(belt);
+
+                // Create lift and pusher bodies.
+                lift = phys2D.createRigidBody({
+                    shapes: [
+                        phys2D.createPolygonShape({
+                            vertices: phys2D.createBoxVertices(9, 0.01)
+                        })
+                    ],
+                    type: 'kinematic',
+                    position: [stageWidth - 4.5, stageHeight]
+                });
+                pusher = phys2D.createRigidBody({
+                    shapes: [
+                        phys2D.createPolygonShape({
+                            vertices: phys2D.createBoxVertices(9, 10)
+                        })
+                    ],
+                    type: 'kinematic',
+                    position: [stageWidth + 4.5, 5]
+                });
+                world.addRigidBody(lift);
+                world.addRigidBody(pusher);
+                animationState = 0;
+
+                // Create piles of each factory shape.
+                var x, y;
+                var xCount = Math.floor(stageWidth / shapeSize);
+                for (x = 0; x < xCount; x += 1) {
+                    for (y = 0; y < 4; y += 1) {
+                        var index = (y % shapeFactory.length);
+                        var shape = shapeFactory[index];
+                        var body = phys2D.createRigidBody({
+                            shapes: [shape.clone()],
+                            position: [
+                                (x + 0.5) * (stageWidth / xCount),
+                                (y + 0.5) * shapeSize
+                            ],
+                            userData: Draw2DSprite.create({
+                                width: shapeSize,
+                                height: shapeSize,
+                                origin: [shapeSize / 2, shapeSize / 2],
+                                textureRectangle: textureRectangles[index],
+                                texture: draw2DTexture
+                            })
+                        });
+                        world.addRigidBody(body);
+                    }
+                }
+            }
+
+            //==========================================================================
+            // Mouse/Keyboard controls
+            //==========================================================================
+
+            var inputDevice = TurbulenzEngine.createInputDevice({});
+            var keyCodes = inputDevice.keyCodes;
+            var mouseCodes = inputDevice.mouseCodes;
+
+            var mouseX = 0;
+            var mouseY = 0;
+            var onMouseOver = function mouseOverFn(x, y) {
+                mouseX = x;
+                mouseY = y;
+            };
+            inputDevice.addEventListener('mouseover', onMouseOver);
+
+            var onKeyUp = function onKeyUpFn(keynum) {
+                if (keynum === keyCodes.R) // 'r' key
+                {
+                    reset();
+                }
+            };
+            inputDevice.addEventListener('keyup', onKeyUp);
+
+            var onMouseDown = function onMouseDownFn(code, x, y) {
+                mouseX = x;
+                mouseY = y;
+
+                if (handConstraint) {
+                    return;
+                }
+
+                var point = draw2D.viewportMap(x, y);
+                var body;
+                if (code === mouseCodes.BUTTON_0) // Left button
+                {
+                    var bodies = [];
+                    var numBodies = world.bodyPointQuery(point, bodies);
+                    var i;
+                    for (i = 0; i < numBodies; i += 1) {
+                        body = bodies[i];
+                        if (body.isDynamic()) {
+                            handConstraint = phys2D.createPointConstraint({
+                                bodyA: handReferenceBody,
+                                bodyB: body,
+                                anchorA: point,
+                                anchorB: body.transformWorldPointToLocal(point),
+                                stiff: false,
+                                maxForce: 1e5
+                            });
+                            world.addConstraint(handConstraint);
+                            break;
+                        }
+                    }
+                }
+                else if (code === mouseCodes.BUTTON_1) // Right button
+                {
+                    var index = Math.floor(Math.random() * shapeFactory.length);
+                    body = phys2D.createRigidBody({
+                        shapes: [shapeFactory[index].clone()],
+                        position: point,
+                        userData: Draw2DSprite.create({
+                            width: shapeSize,
+                            height: shapeSize,
+                            origin: [shapeSize / 2, shapeSize / 2],
+                            textureRectangle: textureRectangles[index],
+                            texture: draw2DTexture
+                        })
+                    });
+                    world.addRigidBody(body);
+                }
+            };
+            inputDevice.addEventListener('mousedown', onMouseDown);
+
+            var onMouseLeaveUp = function onMouseLeaveUpFn() {
+                if (handConstraint) {
+                    world.removeConstraint(handConstraint);
+                    handConstraint = null;
+                }
+            };
+            inputDevice.addEventListener('mouseleave', onMouseLeaveUp);
+            inputDevice.addEventListener('mouseup', onMouseLeaveUp);
+
+            //==========================================================================
+            // Main loop.
+            //==========================================================================
+
+            var fpsElement = document.getElementById("fpscounter");
+            var lastFPS = "";
+
+            var bodiesElement = document.getElementById("bodiescounter");
+            var lastNumBodies = 0;
+
+            var realTime = 0;
+            var prevTime = TurbulenzEngine.time;
+
+            function mainLoop() {
+                if (!graphicsDevice.beginFrame()) {
+                    return;
+                }
+
+                inputDevice.update();
+                graphicsDevice.clear([0.3, 0.3, 0.3, 1.0]);
+
+                var body;
+                if (handConstraint) {
+                    body = handConstraint.bodyB;
+                    handConstraint.setAnchorA(draw2D.viewportMap(mouseX, mouseY));
+
+                    // Additional angular dampening of body being dragged.
+                    // Helps it to settle quicker instead of spinning around
+                    // the cursor.
+                    body.setAngularVelocity(body.getAngularVelocity() * 0.9);
+                }
+
+                var curTime = TurbulenzEngine.time;
+                var timeDelta = (curTime - prevTime);
+                // Prevent trying to simulate too much time at once!
+                if (timeDelta > (1 / 20)) {
+                    timeDelta = (1 / 20);
+                }
+                realTime += timeDelta;
+                prevTime = curTime;
+
+                while (world.simulatedTime < realTime) {
+                    // lift/pusher animation
+                    if (animationState === 0) {
+                        // Start of animatino, set velocity of lift to move up to the target
+                        // in 3 seconds.
+                        lift.setVelocityFromPosition([stageWidth - 4.5, 10], 0, 3);
+                        animationState = 1;
+                    }
+                    else if (animationState === 1) {
+                        if (lift.getPosition()[1] <= 10) {
+                            // Reached target position for lift.
+                            // Set position incase it over-reached and zero velocity.
+                            lift.setPosition([stageWidth - 4.5, 10]);
+                            lift.setVelocity([0, 0]);
+
+                            // Start pusher animation to move left.
+                            pusher.setVelocityFromPosition([stageWidth - 4.5, 5], 0, 1.5);
+                            animationState = 2;
+                        }
+                    }
+                    else if (animationState === 2) {
+                        if (pusher.getPosition()[0] <= (stageWidth - 4.5)) {
+                            // Reached target position for pusher.
+                            // Set velocities of pusher and lift to both move right off-screen.
+                            pusher.setVelocityFromPosition([stageWidth + 4.5, 5], 0, 1);
+                            lift.setVelocityFromPosition([stageWidth + 4.5, 10], 0, 1);
+                            animationState = 3;
+                        }
+                    }
+                    else if (animationState === 3) {
+                        if (pusher.getPosition()[0] >= stageWidth + 4.5) {
+                            // Reached target.
+                            // Reset positions and velocities and begin animation afresh.
+                            pusher.setPosition([stageWidth + 4.5, 5]);
+                            pusher.setVelocity([0, 0]);
+                            lift.setPosition([stageWidth - 4.5, stageHeight]);
+                            lift.setVelocity([0, 0]);
+                            animationState = 0;
+                        }
+                    }
+
+                    world.step(1 / 60);
+                }
+
+                // draw2D sprite drawing.
+                var bodies = world.rigidBodies;
+                var limit = bodies.length;
+                var i;
+                if (!debugEnabled) {
+                    draw2D.begin('alpha', 'deferred');
+                    var pos = [];
+                    for (i = 0; i < limit; i += 1) {
+                        body = bodies[i];
+                        if (body.userData) {
+                            body.getPosition(pos);
+                            var sprite = body.userData;
+                            sprite.x = pos[0];
+                            sprite.y = pos[1];
+                            sprite.rotation = body.getRotation();
+                            draw2D.drawSprite(sprite);
+                        }
+                    }
+                    draw2D.end();
+                }
+
+                // physics2D debug drawing.
+                debug.setScreenViewport(draw2D.getScreenSpaceViewport());
+                debug.showRigidBodies = debugEnabled;
+                debug.showContacts = contactsEnabled;
+
+                debug.begin();
+                if (!debugEnabled) {
+                    // draw anything without a Draw2DSprite.
+                    for (i = 0; i < limit; i += 1) {
+                        body = bodies[i];
+                        if (!body.userData) {
+                            debug.drawRigidBody(body);
+                        }
+                    }
+                }
+                debug.drawWorld(world);
+                debug.end();
+
+                graphicsDevice.endFrame();
+
+                if (fpsElement) {
+                    var fpsText = (graphicsDevice.fps).toFixed(2);
+                    if (lastFPS !== fpsText) {
+                        lastFPS = fpsText;
+
+                        fpsElement.innerHTML = fpsText + " fps";
+                    }
+                }
+
+                if (bodiesElement) {
+                    if (lastNumBodies !== limit) {
+                        lastNumBodies = limit;
+
+                        bodiesElement.innerHTML = lastNumBodies + "";
+                    }
+                }
+            }
+
+            var intervalID;
+            function loadingLoop() {
+                if (!draw2DTexture) {
+                    return;
+                }
+
+                reset();
+                TurbulenzEngine.clearInterval(intervalID);
+                intervalID = TurbulenzEngine.setInterval(mainLoop, 1000 / 60);
+            }
+            intervalID = TurbulenzEngine.setInterval(loadingLoop, 10);
+
+            //==========================================================================
+
+            function loadHtmlControls() {
+                htmlControls = HTMLControls.create();
+                htmlControls.addCheckboxControl({
+                    id: "enableDebug",
+                    value: "debugEnabled",
+                    isSelected: debugEnabled,
+                    fn: function () {
+                        debugEnabled = !debugEnabled;
+                        return debugEnabled;
+                    }
+                });
+                htmlControls.addCheckboxControl({
+                    id: "enableContacts",
+                    value: "contactsEnabled",
+                    isSelected: contactsEnabled,
+                    fn: function () {
+                        contactsEnabled = !contactsEnabled;
+                        return contactsEnabled;
+                    }
+                });
+                htmlControls.register();
+            }
+
+            loadHtmlControls();
+
+            // Create a scene destroy callback to run when the window is closed
+            TurbulenzEngine.onunload = function destroyScene() {
+                if (intervalID) {
+                    TurbulenzEngine.clearInterval(intervalID);
+                }
+
+                if (gameSession) {
+                    gameSession.destroy();
+                    gameSession = null;
+                }
+            };
+        };
+
+        var appEntry = TurbulenzEngine.onload;
+        var appShutdown = TurbulenzEngine.onunload;
+        if (!appEntry) {
+            window.alert("TurbulenzEngine.onload has not been set");
+            return;
         }
 
-        constructor(container: HTMLElement) {
-            console.log("Beginning of Editor constructor ");
+        
 
-            this.container = container;
+        var canvas = <HTMLCanvasElement> document.getElementById('turbulenz_game_engine_canvas');
 
-            this.width = 960;
-            this.height = 500;
+        var startCanvas = function startCanvasFn() {
+            if (canvas.getContext && canvasSupported) {
+                TurbulenzEngine = <TurbulenzEngine> WebGLTurbulenzEngine.create({
+                    canvas: canvas,
+                    fillParent: true
+                });
 
+                if (!TurbulenzEngine) {
+                    window.alert("Failed to init TurbulenzEngine (canvas)");
+                    return;
+                }
 
-            // mouse event vars
-            this.selected_node = null,
-            this.selected_link = null,
-            this.mousedown_link = null,
-            this.mousedown_node = null,
-            this.mouseup_node = null;
+                TurbulenzEngine.onload = appEntry;
+                TurbulenzEngine.onunload = appShutdown;
+                // appEntry() sto put TurbulenzEngine inside
+                appEntry(TurbulenzEngine);
+                }
+        }
 
-            // init svg
-            this.svg = d3.select(this.container)
-                .append("svg:svg")
-                .attr("width", this.width)
-                .attr("height", this.height)
-                .attr("pointer-events", "all");
+            var previousOnBeforeUnload = window.onbeforeunload;
+        window.onbeforeunload = function () {
+            if (TurbulenzEngine.onunload) {
+                TurbulenzEngine.onunload.call(this);
+            }
+        };  // window.beforeunload
 
-            this.outZoom = d3.behavior.zoom().on("zoom", () => this.rescale());
-            this.translate = [0.0, 0.0];
-            this.scale = 1.0;
-            this.vis = this.svg
-                .append('svg:g')
-                .call(this.outZoom)
-                .on("dblclick.zoom", null)
-                .append('svg:g')
-                .on("mousemove", () => this.mousemove())
-                .on("mousedown", () => this.mousedown())
-                .on("mouseup", () => this.mouseup());
-
-            this.vis.append('svg:rect')
-                .attr('width', this.width)
-                .attr('height', this.height)
-                .attr('fill', 'white');
-
-            // init force layout
-            this.force = d3.layout.force()
-                .size([this.width, this.height])
-                .nodes([{}]) // initialize with a single node
-                .linkDistance(50)
-                .charge(-200)
-                .on("tick", () => this.tick());
+        startCanvas();        
 
 
-            // line displayed when dragging new nodes
-            this.drag_line = this.vis.append("line")
-                .attr("class", "drag_line")
-                .attr("x1", 0)
-                .attr("y1", 0)
-                .attr("x2", 0)
-                .attr("y2", 0);
-
-            // get layout properties
-            this.node = this.vis.selectAll(".node"),
-            this.link = this.vis.selectAll(".link");
-
-            // add keyboard callback
-            d3.select(window)
-                .on("keydown", () => this.keydown());
-
-
-
-            this.redraw();
-
-            // focus on svg
-            // vis.node().focus();
 
 
             console.log("Done with Editor constructor");
         }
-
-
-        mousedown() {
-            console.log("mousedown");
-            console.log("mousedown_node: ", this.mousedown_node);
-            console.log("mousedown_link: ", this.mousedown_link);
-            if (!this.mousedown_node && !this.mousedown_link) {
-                console.log("We're allowing panning");
-                // allow panning if nothing is selected
-
-
-                //vis.call(d3.behavior.zoom().on("zoom"), rescale); 
-                this.vis.call(d3.behavior.zoom().on("zoom", () => this.rescale()));
-                return;
-            } else {
-                console.log("No panning");
-                //vis.call(d3.behavior.zoom().on("zoom", null))
-
-
-            }
-        }
-
-        mousemove() {
-            //console.log("mousemove");
-            //console.log("mousedown_node: ", mousedown_node);
-            if (!this.mousedown_node) return;
-            var point = d3.mouse($("svg g g")[0]);
-            // update drag line
-            this.drag_line
-                .attr("x1", this.mousedown_node.x)
-                .attr("y1", this.mousedown_node.y)
-                .attr("x2", point[0])
-                .attr("y2", point[1]);
-
-        }
-
-        mouseup() {
-            console.log("mouseup");
-            console.log("mousedown_node: ", this.mousedown_node);
-            if (this.mousedown_node) {
-                // hide drag line
-                this.drag_line
-                    .attr("class", "drag_line_hidden")
-
-                    if (!this.mouseup_node) {
-                    // add node
-                        var point = d3.mouse($("svg g g")[0]),
-                        newnode = { x: point[0], y: point[1] };
-
-                    this.force.nodes().push(newnode);
-
-                    // select new node
-                    this.selected_node = newnode;
-                    this.selected_link = null;
-
-                    // add link to mousedown node
-                    this.force.links().push({ source: this.mousedown_node, target: newnode });
-                }
-
-                this.redraw();
-            }
-            // clear mouse event vars
-            this.resetMouseVars();
-        }
-
-        resetMouseVars() {
-            this.mousedown_node = null;
-            this.mouseup_node = null;
-            this.mousedown_link = null;
-        }
-
-        tick() {
-            this.link.attr("x1", (d) => d.source.x)
-                .attr("y1", (d) => d.source.y)
-                .attr("x2", (d) => d.target.x)
-                .attr("y2", (d) => d.target.y);
-
-            this.node.attr("cx", (d) => d.x)
-                .attr("cy", (d) => d.y);
-        }
-
-        // redraw force layout
-        redraw() {
-
-            this.link = this.link.data(this.force.links());
-
-            this.link.enter().insert("line", ".node")
-                .attr("class", "link")
-                .on("mousedown",
-                (d) => {
-                    this.mousedown_link = d;
-                    if (this.mousedown_link == this.selected_link) this.selected_link = null;
-                    else this.selected_link = this.mousedown_link;
-                    this.selected_node = null;
-                    this.redraw();
-                })
-
-            this.link.exit().remove();
-
-            this.link
-                .classed("link_selected", (d) => (d === this.selected_link));
-
-            this.node = this.node.data(this.force.nodes());
-
-            this.node.enter().insert("circle")
-                .attr("class", "node")
-                .attr("r", 5)
-                .on("mousedown",
-                (d) => {
-                    // disable zoom
-                    //vis.call(d3.behavior.zoom().on("zoom"), null);
-                    this.vis.call(d3.behavior.zoom().on("zoom", null));
-
-                    this.mousedown_node = d;
-                    if (this.mousedown_node === this.selected_node) {
-                        this.selected_node = null;
-                    } else {
-                        this.selected_node = this.mousedown_node;
-                    }
-                    this.selected_link = null;
-
-                    // reposition drag line
-                    this.drag_line
-                        .attr("class", "link")
-                        .attr("x1", this.mousedown_node.x)
-                        .attr("y1", this.mousedown_node.y)
-                        .attr("x2", this.mousedown_node.x)
-                        .attr("y2", this.mousedown_node.y);
-
-                    this.redraw();
-                })
-                .on("mousedrag",
-                (d) => {
-                    console.log("mousedrag -redraw");
-                    // redraw();
-                })
-                .on("mouseup",
-                (d) => {
-                    console.log("mouseup - redraw");
-                    console.log("mousedown_node: ", this.mousedown_node);
-                    if (this.mousedown_node) {
-                        this.mouseup_node = d;
-                        if (this.mouseup_node == this.mousedown_node) {
-                            this.resetMouseVars(); return;
-                        }
-
-                        // add link
-                        var newlink = { source: this.mousedown_node, target: this.mouseup_node };
-                        this.force.links().push(newlink);
-
-                        // select new link
-                        this.selected_link = newlink;
-                        this.selected_node = null;
-
-                        // enable zoom
-                        //vis.call(d3.behavior.zoom().on("zoom"), rescale);
-                        this.vis.call(d3.behavior.zoom().on("zoom", () => this.rescale()))
-                        this.redraw();
-                    }
-                })
-                .transition()
-                .duration(750)
-                .ease("elastic")
-                .attr("r", 6.5);
-
-            this.node.exit().transition()
-                .attr("r", 0)
-                .remove();
-
-            this.node.classed("node_selected", (d) => (d === this.selected_node));
-
-
-
-            if (d3.event) {
-                // prevent browser's default behavior
-                d3.event.preventDefault();
-            }
-
-            console.log("force = ", this.force);
-            this.force.start();
-
-        }
-
-        spliceLinksForNode(node) {
-            var toSplice = this.force.links().filter(
-                (l) => ((l.source === node) || (l.target === node)));
-            toSplice.map((l) => this.force.links().splice(this.force.links().indexOf(l), 1));
-        }
-
-        keydown() {
-            if (!this.selected_node && !this.selected_link) return;
-            switch (d3.event.keyCode) {
-                case 8: // backspace
-                case 46: { // delete
-                    if (this.selected_node) {
-                        this.force.nodes().splice(this.force.nodes().indexOf(this.selected_node), 1);
-                        this.spliceLinksForNode(this.selected_node);
-                    }
-                    else if (this.selected_link) {
-                        this.force.links().splice(this.force.links().indexOf(this.selected_link), 1);
-                    }
-                    this.selected_link = null;
-                    this.selected_node = null;
-                    this.redraw();
-                    break;
-                }
-            }
-        }
-        // rescale g
-        rescale(): void {
-            if (this.mousedown_node || this.mousedown_link) {
-                // Revert the changes - hack to prevent panning thanks to http://stackoverflow.com/questions/19249587/nested-zooms-issue-in-d3, Phong Nguyen answer
-                this.outZoom.scale(this.scale);
-                this.outZoom.translate(this.translate);
-                return;
-            } else {
-
-                this.translate = d3.event.translate;
-                this.scale = d3.event.scale;
-
-                this.vis.attr("transform",
-                    "translate(" + this.translate + ")"
-                    + " scale(" + this.scale + ")");
-            }
-        }
     }
-
 
 
     export function addEditor(container: HTMLElement): Editor {

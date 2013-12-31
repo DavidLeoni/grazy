@@ -94,6 +94,12 @@ interface JQueryGenericPromise<T> {
     Interface for the JQuery promise, part of callbacks
 */
 interface JQueryPromise<T> {
+    // Generic versions of callbacks
+    always(...alwaysCallbacks: T[]): JQueryPromise<T>;
+    done(...doneCallbacks: T[]): JQueryPromise<T>;
+    fail(...failCallbacks: T[]): JQueryPromise<T>;
+    progress(...progressCallbacks: T[]): JQueryPromise<T>;
+
     always(...alwaysCallbacks: any[]): JQueryPromise<T>;
     done(...doneCallbacks: any[]): JQueryPromise<T>;
     fail(...failCallbacks: any[]): JQueryPromise<T>;
@@ -118,6 +124,12 @@ interface JQueryPromise<T> {
     Interface for the JQuery deferred, part of callbacks
 */
 interface JQueryDeferred<T> extends JQueryPromise<T> {
+    // Generic versions of callbacks
+    always(...alwaysCallbacks: T[]): JQueryDeferred<T>;
+    done(...doneCallbacks: T[]): JQueryDeferred<T>;
+    fail(...failCallbacks: T[]): JQueryDeferred<T>;
+    progress(...progressCallbacks: T[]): JQueryDeferred<T>;
+
     always(...alwaysCallbacks: any[]): JQueryDeferred<T>;
     done(...doneCallbacks: any[]): JQueryDeferred<T>;
     fail(...failCallbacks: any[]): JQueryDeferred<T>;
@@ -421,14 +433,14 @@ interface JQuery {
     prop(map: any): JQuery;
     prop(propertyName: string, func: (index: any, oldPropertyValue: any) => any): JQuery;
 
-    removeAttr(attributeName: any): JQuery;
+    removeAttr(attributeName: string): JQuery;
 
-    removeClass(className?: any): JQuery;
+    removeClass(className?: string): JQuery;
     removeClass(func: (index: any, cls: any) => any): JQuery;
 
-    removeProp(propertyName: any): JQuery;
+    removeProp(propertyName: string): JQuery;
 
-    toggleClass(className: any, swtch?: boolean): JQuery;
+    toggleClass(className: string, swtch?: boolean): JQuery;
     toggleClass(swtch?: boolean): JQuery;
     toggleClass(func: (index: any, cls: any, swtch: any) => any): JQuery;
 
@@ -614,8 +626,9 @@ interface JQuery {
     off(events?: string, selector?: any, handler?: (eventObject: JQueryEventObject) => any): JQuery;
     off(eventsMap: { [key: string]: any; }, selector?: any): JQuery;
 
-    on(events: string, selector?: any, data?: any, handler?: (eventObject: JQueryEventObject) => any): JQuery;
-    on(events: string, selector?: any, handler?: (eventObject: JQueryEventObject) => any): JQuery;
+    on(events: string, selector?: string, data?: any, handler?: (eventObject: JQueryEventObject) => any): JQuery;
+    on(events: string, selector?: string, handler?: (eventObject: JQueryEventObject) => any): JQuery;
+    on(events: string, handler?: (eventObject: JQueryEventObject) => any): JQuery;
     on(eventsMap: { [key: string]: any; }, selector?: any, data?: any): JQuery;
 
     one(events: string, selector?: any, data?: any, handler?: (eventObject: JQueryEventObject) => any): JQuery;

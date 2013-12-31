@@ -2,8 +2,29 @@
 
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
     <title>StoDev</title>
+
+    <style type="text/css">
+html, body, div, span, object, iframe, h1, h2, p, a, img, ul, li, fieldset, form, label, legend, table, thead, tbody, tfoot, tr, th, td {
+    border: 0;
+    font-size: 100%;
+    margin: 0;
+    outline: 0;
+    padding: 0;
+    vertical-align: baseline;
+}
+
+
+    </style>
+
+
+    <link rel="stylesheet" type="text/css" href="styles/stodev.css">
+   <!-- stuff by Turbulenz don't want crappy jquery ui <link rel="Stylesheet" type="text/css" href="css/jquery-ui-1.8.2.custom.css"/> -->
+  <!-- stuff by Turbulenz jeez this is old  <script type="text/javascript" src="js/jquery-1.4.2.min.js"></script> -->
+   <!-- stuff by Turbulenz custom what? <script type="text/javascript" src="js/jquery-ui-1.8.2.custom.min.js"></script> -->
+
+    
 
     <!-- stocore -->
     <script src="../stocore/js/libs/jquery/jquery-2.0.3.js"></script>
@@ -12,20 +33,147 @@
     <script src="../stocore/js/stocore.js"></script>
 
     <!-- stovis -->
-    <script src="../stovis/js/libs/d3/d3.v3.js"></script>
-    <script src="../stovis/js/stovis.js"></script>
-    <script src="../stovis/test/js/d3-tests.js"></script>
+  
+    
     <link rel="stylesheet" href="../stovis/styles/stovis.css" type="text/css"/>
+   <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/observer.js"></script>
+    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/requesthandler.js"></script>
+    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/utilities.js"></script>
+    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/services/turbulenzservices.js"></script>
+    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/services/turbulenzbridge.js"></script>
+    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/services/gamesession.js"></script>
+    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/services/mappingtable.js"></script>
+    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/shadermanager.js"></script>
+    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/physics2ddevice.js"></script>
+    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/draw2d.js"></script>
+    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/boxtree.js"></script>
+    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/physics2ddebugdraw.js"></script>
+    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/textureeffects.js"></script>
+    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/htmlcontrols.js"></script>
+
+    <script src="../stovis/js/stovis.js"></script>
 
     <!-- stodev -->
     <link rel="stylesheet" href="styles/stodev.css" type="text/css" />
 
 
 </head>
-<body>
+
+<body style="background:#B4B4B4;font:normal normal normal 13px/1.231 Helvetica,Arial,sans-serif;text-shadow:1px 1px #F9F8F8;">
+    <div id="titlebar" style="position:fixed;height:65px;top:0;right:0;left:0;">
+        <strong style="font-size:24px;line-height:64px;margin:16px;">
+            <!-- block tz_app_title_name -->
+            Physics2D Constraints
+            <!-- end tz_app_title_name -->
+        </strong>
+        <div id="titlelogo"
+             style="float:right;width:27px;height:27px;margin:18px 24px;">
+        </div>
+    </div>
+    <div id="sidebar"
+         style="background:#B4B4B4;position:fixed;width:303px;top:65px;left:0;">
+        <!-- block tz_app_html_controls -->
+        
+<div class="html-control control-checkbox">
+    <span class="control-title">Elastic Constraints</span>
+    <input type="checkbox" id="elasticConstraints"/>
+</div>
+<div class="html-control control-output-pair">Elastic Frequency:
+    <input type="text" id="frequencySliderinput" size="2" value="1" class="control-textfield">
+</div>
+<div class="html-control control-slider">
+    <div id="frequencySlider" class="sliderinput"></div>
+</div>
+<div class="html-control control-output-pair">Elastic Damping:
+    <input type="text" id="dampingSliderinput" size="2" value="0.1" class="control-textfield">
+</div>
+<div class="html-control control-slider">
+    <div id="dampingSlider" class="sliderinput"></div>
+</div>
+
+<div class="engine-control">
+<table cellspacing="0">
+<tbody>
+<tr>
+    <th>Key/Mouse</th><th>Physics Control</th>
+</tr>
+<tr>
+    <td class="key">R</td>
+    <td>Reset</td>
+</tr>
+<tr>
+    <td class="mouse">Left click (hold)</td>
+    <td>Manipulate body under cursor</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+        <!-- end tz_app_html_controls -->
+    </div>
+    <div id="engine" style="background:#939393;position:fixed;top:65px;
+                            bottom:0;right:0;left:303px;
+                            border-left:1px solid #898989;">
+        <!--
+          HTML to create a plugin or canvas instance.
+          Supplied by 'tz_engine_div' variable.
+        -->
+        
+        <canvas id="turbulenz_game_engine_canvas" moz-opaque="true" tabindex="1">
+            Sorry, but your browser does not support WebGL or does not have it
+            enabled.  To get a WebGL-enabled browser, please see:<br/>
+            <a href="http://www.khronos.org/webgl/wiki/Getting_a_WebGL_Implementation" target="_blank">
+                Getting a WebGL Implementation
+            </a>
+        </canvas>
+
+        <script type="text/javascript">
+            // moved everything to stodev.ts
+        </script>
+    </div>
+
+    <!-- this stuff is not jslib-modular! I double checked! begin 'tz_include_js' variable -->
+<!--    <script type="text/javascript" src="jslib/debug.js"></script>
+<script type="text/javascript" src="jslib/vmath.js"></script>
+<script type="text/javascript" src="jslib/utilities.js"></script>
+<script type="text/javascript" src="jslib/aabbtree.js"></script>
+<script type="text/javascript" src="jslib/observer.js"></script>
+<script type="text/javascript" src="jslib/webgl/ddsloader.js"></script>
+<script type="text/javascript" src="jslib/webgl/graphicsdevice.js"></script>
+<script type="text/javascript" src="jslib/webgl/inputdevice.js"></script>
+<script type="text/javascript" src="jslib/webgl/mathdevice.js"></script>
+<script type="text/javascript" src="jslib/webgl/networkdevice.js"></script>
+<script type="text/javascript" src="jslib/webgl/physicsdevice.js"></script>
+<script type="text/javascript" src="jslib/webgl/sounddevice.js"></script>
+<script type="text/javascript" src="jslib/webgl/soundtarloader.js"></script>
+<script type="text/javascript" src="jslib/webgl/tarloader.js"></script>
+<script type="text/javascript" src="jslib/webgl/tgaloader.js"></script>
+<script type="text/javascript" src="jslib/webgl/touch.js"></script>
+<script type="text/javascript" src="jslib/webgl/touchevent.js"></script>
+<script type="text/javascript" src="jslib/webgl/turbulenzengine.js"></script>
+<script type="text/javascript" src="jslib/requesthandler.js"></script>
+<script type="text/javascript" src="jslib/services/turbulenzservices.js"></script>
+<script type="text/javascript" src="jslib/services/turbulenzbridge.js"></script>
+<script type="text/javascript" src="jslib/services/gamesession.js"></script>
+<script type="text/javascript" src="jslib/services/mappingtable.js"></script>
+<script type="text/javascript" src="jslib/shadermanager.js"></script>
+<script type="text/javascript" src="jslib/physics2ddevice.js"></script>
+<script type="text/javascript" src="jslib/draw2d.js"></script>
+<script type="text/javascript" src="jslib/boxtree.js"></script>
+<script type="text/javascript" src="jslib/physics2ddebugdraw.js"></script>
+<script type="text/javascript" src="jslib/fontmanager.js"></script>
+<script type="text/javascript" src="scripts/htmlcontrols.js"></script> -->
+    <!-- end 'tz_include_js' variable -->
+
     <h1>StoDev</h1>
 
     <div id="content"></div>
-    <script src="js/stodev.js"></script>
+    <script src="js/stodev.js"></script> 
+
+
+
+
 </body>
+
+
 </html>

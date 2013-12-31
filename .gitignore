@@ -5,7 +5,6 @@
 .com.apple.timemachine.supported
 .import-temp/
 
-/private/
 
 /* VS (lot of stuff) */
 
@@ -143,3 +142,8 @@ UpgradeLog*.htm
 # SQL Server files
 App_Data/*.mdf
 App_Data/*.ldf
+
+
+########## stocas specific
+
+/private/

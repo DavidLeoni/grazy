@@ -9078,7 +9078,8 @@ WebGLInputDevice.prototype.padCodes = {
     START: 18,
     BACK: 19
 };
-WebGLMathDevice = VMath;
+// sto let's put var otherwise we get ReferenceError: assignment to undeclared variable WebGLMathDevice
+var WebGLMathDevice = VMath;
 
 debug.evaluate(function debugSetupMathDevice() {
     WebGLMathDevice = {

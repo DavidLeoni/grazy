@@ -45,6 +45,7 @@
     </None>
     <None Include="web.Release.config">
       <DependentUpon>web.config</DependentUpon>
+      <SubType>Designer</SubType>
     </None>
   </ItemGroup>
   <ItemGroup>

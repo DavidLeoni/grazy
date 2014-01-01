@@ -1285,8 +1285,8 @@ interface TurbulenzEngine
 {
     version              : string;
     time                 : number;
-
-    onload               : { (engine: TurbulenzEngine): void; };
+    // sto made engine optional with the '?' - initialization is pretty weird in Turbulenz
+    onload               : { (engine?: TurbulenzEngine): void; };
     onunload             : { (): void; };
     onerror              : { (msg: string): void; };
     onwarning            : { (msg: string): void; };

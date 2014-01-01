@@ -1,3 +1,6 @@
+// sto added these
+/// <reference path="utilities.d.ts" />
+
 interface FontDimensions {
     width: number;
     height: number;

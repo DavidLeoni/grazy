@@ -1,6 +1,6 @@
 
-/// <reference path="../../stocore/js/libs/jquery/jquery.d.ts" />
-/// <reference path="../../stocore/js/stocore.ts" />
+/// <reference path="../../../stocore/js/libs/jquery/jquery.d.ts" />
+/// <reference path="../../../stocore/js/stocore.ts" />
 
 
 
@@ -13,18 +13,18 @@
 /*global Physics2DDebugDraw: false */
 /*global HTMLControls: false */
 
-/// <reference path="libs/turbulenz-0.27/jslib-modular/turbulenz.d.ts" />
-/// <reference path="libs/turbulenz-0.27/jslib-modular/servicedatatypes.d.ts" />
-/// <reference path="libs/turbulenz-0.27/jslib-modular/services.d.ts" />
-/// <reference path="libs/turbulenz-0.27/jslib-modular/aabbtree.d.ts" />
-/// <reference path="libs/turbulenz-0.27/jslib-modular/jsengine_base.d.ts" />
-/// <reference path="libs/turbulenz-0.27/jslib-modular/jsengine.d.ts" />
-/// <reference path="libs/turbulenz-0.27/jslib-modular/fontmanager.d.ts" />
-/// <reference path="libs/turbulenz-0.27/jslib-modular/utilities.d.ts" />
+/// <reference path="../../js/libs/turbulenz-0.27/jslib-modular/turbulenz.d.ts" />
+/// <reference path="../../js/libs/turbulenz-0.27/jslib-modular/servicedatatypes.d.ts" />
+/// <reference path="../../js/libs/turbulenz-0.27/jslib-modular/services.d.ts" />
+/// <reference path="../../js/libs/turbulenz-0.27/jslib-modular/aabbtree.d.ts" />
+/// <reference path="../../js/libs/turbulenz-0.27/jslib-modular/jsengine_base.d.ts" />
+/// <reference path="../../js/libs/turbulenz-0.27/jslib-modular/jsengine.d.ts" />
+/// <reference path="../../js/libs/turbulenz-0.27/jslib-modular/fontmanager.d.ts" />
+/// <reference path="../../js/libs/turbulenz-0.27/jslib-modular/utilities.d.ts" />
 
-/// <reference path="libs/turbulenz-0.27/jslib-modular/tzdraw2d.d.ts" />
-/// <reference path="libs/turbulenz-0.27/jslib-modular/physics2d.d.ts" />
-/// <reference path="htmlcontrols.ts" />
+/// <reference path="../../js/libs/turbulenz-0.27/jslib-modular/tzdraw2d.d.ts" />
+/// <reference path="../../js/libs/turbulenz-0.27/jslib-modular/physics2d.d.ts" />
+/// <reference path="../../js/htmlcontrols.ts" />
 
 // Could not find definition in typescript files
 declare var WebGLTurbulenzEngine: any;
@@ -32,7 +32,7 @@ declare var WebGLTurbulenzEngine: any;
 declare var canvasSupported: boolean;
 
 // Module
-module stovis {
+module physics2DConstraintsTest {
     
     export var DEFAULT_BACKGROUND_COLOR = "#2e2e2e";
     export var DEFAULT_FILL_COLOR = "#ffbaba";

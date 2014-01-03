@@ -23,6 +23,7 @@
     <Content Include="pom.xml" />
     <TypeScriptCompile Include="src\main\webapp\stocore\js\stocore.ts" />
     <Content Include="src\main\webapp\stocore\test\js\tsUnit.ts" />
+    <Content Include="src\main\webapp\stodev\physics-2d-constraints-test.html" />
     <Content Include="src\main\webapp\stodev\index.html" />
     <Content Include="src\main\webapp\stodev\styles\stodev.css" />
     <Content Include="src\main\webapp\stodev\js\stodev.js" />
@@ -31,6 +32,8 @@
     <TypeScriptCompile Include="src\main\webapp\stovis\js\prova.ts" />
     <Content Include="src\main\webapp\META-INF\context.xml" />
     <TypeScriptCompile Include="src\main\webapp\stovis\js\stovis.ts" />
+    <TypeScriptCompile Include="src\main\webapp\stovis\test\js\physics-2d-constraints-test.ts" />
+    <Content Include="src\main\webapp\stodev\test\js\stodev-test.ts" />
     <Content Include="src\main\webapp\stovis\test\data\TextFile1.txt" />
     <Content Include="web.config" />
   </ItemGroup>
@@ -55,7 +58,6 @@
     <Folder Include="src\main\webapp\stocore\js\libs\" />
     <Folder Include="src\main\webapp\stodev\js\libs\" />
     <Folder Include="src\main\webapp\stovis\js\libs\" />
-    <Folder Include="src\main\webapp\stovis\test\js\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

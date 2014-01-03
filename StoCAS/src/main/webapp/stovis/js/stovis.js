@@ -19,72 +19,84 @@ var stovis;
 
     var Editor = (function () {
         function Editor(container) {
+            var _this = this;
+            this.elasticConstraints = false;
+            this.frequency = 1;
+            this.damping = 0.1;
+            this.thickness = 0.01;
             console.log("Beginning of Editor constructor... ");
 
             // physics2d_constraints_canvas_debug  ******************************
-            TurbulenzEngine.onload = function onloadFn() {
+            TurbulenzEngine.onload = function () {
+                console.log("sto - Beginning of our redefined TurbulenzEngine.onload");
+
                 //==========================================================================
                 // HTML Controls
                 //==========================================================================
-                var htmlControls;
-
-                var elasticConstraints = false;
-                var frequency = 1;
-                var damping = 0.1;
-
                 //==========================================================================
                 // Turbulenz Initialization
                 //==========================================================================
-                var graphicsDevice = TurbulenzEngine.createGraphicsDevice({});
-                var mathDevice = TurbulenzEngine.createMathDevice({});
-                var requestHandler = RequestHandler.create({});
+                _this.graphicsDevice = TurbulenzEngine.createGraphicsDevice({});
+                console.log("this.graphicsDevice", _this.graphicsDevice);
+                _this.mathDevice = TurbulenzEngine.createMathDevice({});
+                _this.requestHandler = RequestHandler.create({});
+                console.log("RequestHandler = ", _this.requestHandler);
 
-                var fontManager = FontManager.create(graphicsDevice, requestHandler);
-                var shaderManager = ShaderManager.create(graphicsDevice, requestHandler);
+                _this.fontManager = FontManager.create(_this.graphicsDevice, _this.requestHandler);
+                _this.shaderManager = ShaderManager.create(_this.graphicsDevice, _this.requestHandler);
 
-                var font, shader, gameSession;
-                function sessionCreated() {
-                    TurbulenzServices.createMappingTable(requestHandler, gameSession, function (mappingTable) {
+                var sessionCreated = function () {
+                    console.log("Beginning of sessionCreated()");
+                    console.log("this.requestHandler", _this.requestHandler);
+                    console.log("this.gameSession", _this.gameSession);
+
+                    TurbulenzServices.createMappingTable(_this.requestHandler, _this.gameSession, function (mappingTable) {
+                        console.log("callback of TurbulenzServices.createMappingTable");
                         var urlMapping = mappingTable.urlMapping;
                         var assetPrefix = mappingTable.assetPrefix;
-                        shaderManager.setPathRemapping(urlMapping, assetPrefix);
-                        fontManager.setPathRemapping(urlMapping, assetPrefix);
-                        fontManager.load('fonts/hero.fnt', function (fontObject) {
-                            font = fontObject;
+                        _this.shaderManager.setPathRemapping(urlMapping, assetPrefix);
+                        _this.fontManager.setPathRemapping(urlMapping, assetPrefix);
+                        _this.fontManager.load('fonts/hero.fnt', function (fontObject) {
+                            _this.font = fontObject;
                         });
-                        shaderManager.load('shaders/font.cgfx', function (shaderObject) {
-                            shader = shaderObject;
+                        _this.shaderManager.load('shaders/font.cgfx', function (shaderObject) {
+                            _this.shader = shaderObject;
                         });
                     });
-                }
-                gameSession = TurbulenzServices.createGameSession(requestHandler, sessionCreated);
+                };
+
+                console.log("Creating gameSession");
+                console.log("this.requestHandler = ", _this.requestHandler);
+                _this.gameSession = TurbulenzServices.createGameSession(_this.requestHandler, sessionCreated);
 
                 //==========================================================================
                 // Physics2D/Draw2D (Use Draw2D to define viewport scalings)
                 //==========================================================================
                 // set up.
-                var phys2D = Physics2DDevice.create();
+                console.log("Creating phys2D");
+                _this.phys2D = Physics2DDevice.create();
 
                 // size of physics stage.
-                var stageWidth = 40;
-                var stageHeight = 20;
+                _this.stageWidth = 40;
+                _this.stageHeight = 20;
 
-                var draw2D = Draw2D.create({
-                    graphicsDevice: graphicsDevice
+                console.log("Creating draw2D");
+                _this.draw2D = Draw2D.create({
+                    graphicsDevice: _this.graphicsDevice
                 });
-                var debug = Physics2DDebugDraw.create({
-                    graphicsDevice: graphicsDevice
+                _this.debug = Physics2DDebugDraw.create({
+                    graphicsDevice: _this.graphicsDevice
                 });
 
                 // Configure draw2D viewport to the physics stage.
                 // As well as the physics2D debug-draw viewport.
-                draw2D.configure({
-                    viewportRectangle: [0, 0, stageWidth, stageHeight],
+                _this.draw2D.configure({
+                    viewportRectangle: [0, 0, _this.stageWidth, _this.stageHeight],
                     scaleMode: 'scale'
                 });
-                debug.setPhysics2DViewport([0, 0, stageWidth, stageHeight]);
+                _this.debug.setPhysics2DViewport([0, 0, _this.stageWidth, _this.stageHeight]);
 
-                var world = phys2D.createWorld({
+                _this.world = _this.phys2D.createWorld({
                     gravity: [0, 20]
                 });
 
@@ -92,519 +104,113 @@ var stovis;
                 // which we add to the world to use as the first body
                 // in hand constraint. We set anchor for this body
                 // as the cursor position in physics coordinates.
-                var staticReferenceBody = phys2D.createRigidBody({
+                _this.staticReferenceBody = _this.phys2D.createRigidBody({
                     type: 'static'
                 });
-                world.addRigidBody(staticReferenceBody);
-                var handConstraint = null;
+                _this.world.addRigidBody(_this.staticReferenceBody);
+                _this.handConstraint = null;
 
-                function reset() {
-                    // Remove all bodies and constraints from world.
-                    world.clear();
-                    handConstraint = null;
-
-                    // Create a static body around the stage to stop objects leaving the viewport.
-                    // And walls between each constraint section.
-                    var border = phys2D.createRigidBody({
-                        type: 'static'
-                    });
-
-                    var thickness = 0.01;
-                    var i;
-                    for (i = 0; i <= 4; i += 1) {
-                        var x = (stageWidth / 4) * i;
-                        border.addShape(phys2D.createPolygonShape({
-                            vertices: phys2D.createRectangleVertices(x - thickness, 0, x + thickness, stageHeight)
-                        }));
-                    }
-                    for (i = 0; i <= 2; i += 1) {
-                        var y = (stageHeight / 2) * i;
-                        border.addShape(phys2D.createPolygonShape({
-                            vertices: phys2D.createRectangleVertices(0, y - thickness, stageWidth, y + thickness)
-                        }));
-                    }
-
-                    world.addRigidBody(border);
-
-                    var circle = function (x, y, radius, pinned) {
-                        var body = phys2D.createRigidBody({
-                            shapes: [
-                                phys2D.createCircleShape({
-                                    radius: radius
-                                })
-                            ],
-                            position: [x, y]
-                        });
-                        world.addRigidBody(body);
-
-                        if (pinned) {
-                            var pin = phys2D.createPointConstraint({
-                                bodyA: staticReferenceBody,
-                                bodyB: body,
-                                anchorA: [x, y],
-                                anchorB: [0, 0],
-                                userData: "pin"
-                            });
-                            world.addConstraint(pin);
-                        }
-
-                        return body;
-                    };
-
-                    var bodyA, bodyB, worldAnchor;
-
-                    // ------------------------------------
-                    // Point Constraint
-                    bodyA = circle(3.3, 5, 1);
-                    bodyB = circle(6.6, 5, 1);
-
-                    worldAnchor = [5, 5];
-                    var pointConstraint = phys2D.createPointConstraint({
-                        bodyA: bodyA,
-                        bodyB: bodyB,
-                        anchorA: bodyA.transformWorldPointToLocal(worldAnchor),
-                        anchorB: bodyB.transformWorldPointToLocal(worldAnchor),
-                        stiff: (!elasticConstraints),
-                        frequency: frequency,
-                        damping: damping
-                    });
-                    world.addConstraint(pointConstraint);
-
-                    // ------------------------------------
-                    // Weld Constraint
-                    bodyA = circle(13.3, 5, 1);
-                    bodyB = circle(16.6, 5, 1);
-
-                    worldAnchor = [15, 5];
-                    var weldConstraint = phys2D.createWeldConstraint({
-                        bodyA: bodyA,
-                        bodyB: bodyB,
-                        anchorA: bodyA.transformWorldPointToLocal(worldAnchor),
-                        anchorB: bodyB.transformWorldPointToLocal(worldAnchor),
-                        phase: 0,
-                        stiff: (!elasticConstraints),
-                        frequency: frequency,
-                        damping: damping
-                    });
-                    world.addConstraint(weldConstraint);
-
-                    // ------------------------------------
-                    // Distance Constraint
-                    bodyA = circle(23.3, 5, 1);
-                    bodyB = circle(26.6, 5, 1);
-
-                    var distanceConstraint = phys2D.createDistanceConstraint({
-                        bodyA: bodyA,
-                        bodyB: bodyB,
-                        anchorA: [1, 0],
-                        anchorB: [-1, 0],
-                        lowerBound: 1,
-                        upperBound: 3,
-                        stiff: (!elasticConstraints),
-                        frequency: frequency,
-                        damping: damping
-                    });
-                    world.addConstraint(distanceConstraint);
-
-                    // ------------------------------------
-                    // Line Constraint
-                    bodyA = circle(33.3, 5, 1);
-                    bodyB = circle(36.6, 5, 1);
-
-                    worldAnchor = [35, 5];
-                    var lineConstraint = phys2D.createLineConstraint({
-                        bodyA: bodyA,
-                        bodyB: bodyB,
-                        anchorA: bodyA.transformWorldPointToLocal(worldAnchor),
-                        anchorB: bodyB.transformWorldPointToLocal(worldAnchor),
-                        axis: [0, 1],
-                        lowerBound: -1,
-                        upperBound: 1,
-                        stiff: (!elasticConstraints),
-                        frequency: frequency,
-                        damping: damping
-                    });
-                    world.addConstraint(lineConstraint);
-
-                    // ------------------------------------
-                    // Angle Constraint
-                    bodyA = circle(3, 15, 1.5, true);
-                    bodyB = circle(7, 15, 1.5, true);
-
-                    var angleConstraint = phys2D.createAngleConstraint({
-                        bodyA: bodyA,
-                        bodyB: bodyB,
-                        ratio: 3,
-                        lowerBound: -Math.PI * 2,
-                        upperBound: Math.PI * 2,
-                        stiff: (!elasticConstraints),
-                        frequency: frequency,
-                        damping: damping
-                    });
-                    world.addConstraint(angleConstraint);
-
-                    // ------------------------------------
-                    // Motor Constraint
-                    bodyA = circle(13, 15, 1.5, true);
-                    bodyB = circle(17, 15, 1.5, true);
-
-                    var motorConstraint = phys2D.createMotorConstraint({
-                        bodyA: bodyA,
-                        bodyB: bodyB,
-                        ratio: 4,
-                        rate: 20
-                    });
-                    world.addConstraint(motorConstraint);
-
-                    // ------------------------------------
-                    // Pulley Constraint
-                    var bodyC;
-                    bodyA = circle(23.3, 16.6, 0.5);
-                    bodyB = circle(25, 13.3, 1, true);
-                    bodyC = circle(26.6, 16.6, 0.5);
-
-                    // Additional distance constraints to prevent pulley
-                    // becoming degenerate when one side becomes 0 length.
-                    var distanceA = phys2D.createDistanceConstraint({
-                        bodyA: bodyA,
-                        bodyB: bodyB,
-                        lowerBound: 0.25,
-                        upperBound: Number.POSITIVE_INFINITY,
-                        anchorA: [0, -0.5],
-                        anchorB: [-1, 0],
-                        userData: 'pin'
-                    });
-                    world.addConstraint(distanceA);
-
-                    var distanceB = phys2D.createDistanceConstraint({
-                        bodyA: bodyC,
-                        bodyB: bodyB,
-                        lowerBound: 0.25,
-                        upperBound: Number.POSITIVE_INFINITY,
-                        anchorA: [0, -0.5],
-                        anchorB: [1, 0],
-                        userData: 'pin'
-                    });
-                    world.addConstraint(distanceB);
-
-                    var pulleyConstraint = phys2D.createPulleyConstraint({
-                        bodyA: bodyA,
-                        bodyB: bodyB,
-                        bodyC: bodyB,
-                        bodyD: bodyC,
-                        anchorA: [0, -0.5],
-                        anchorB: [-1, 0],
-                        anchorC: [1, 0],
-                        anchorD: [0, -0.5],
-                        ratio: 2,
-                        lowerBound: 6,
-                        upperBound: 8,
-                        stiff: (!elasticConstraints),
-                        frequency: frequency,
-                        damping: damping
-                    });
-                    world.addConstraint(pulleyConstraint);
-
-                    // ------------------------------------
-                    // Custom Constraint
-                    bodyA = circle(35, 13.3, 1);
-                    bodyB = circle(35, 16.6, 1, true);
-
-                    // Additional line constraint to pin upper body to rack.
-                    var line = phys2D.createLineConstraint({
-                        bodyA: staticReferenceBody,
-                        bodyB: bodyA,
-                        anchorA: [35, 13.3],
-                        anchorB: [0, 0],
-                        axis: [1, 0],
-                        lowerBound: -5,
-                        upperBound: 5,
-                        userData: 'pin'
-                    });
-                    world.addConstraint(line);
-
-                    // Custom constraint defined so that the x-position of
-                    // the first body, is equal to the rotation of the
-                    // second body.
-                    //
-                    // Constraint equation:
-                    //    (pi / 5) * (bodyA.posX - 35) - bodyB.rotation = 0
-                    //
-                    // Time Derivative (Velocity constraint):
-                    //    (pi / 5) * bodyA.velX - bodyB.angularVel = 0
-                    //
-                    // Partial derivatives of velocity constraint (Jacobian)
-                    //        velAx   velAy  angVelA  velBx  velBy  angVelB
-                    //    [ (pi / 5),   0,      0,      0,     0,     -1    ]
-                    //
-                    var user = phys2D.createCustomConstraint({
-                        bodies: [bodyA, bodyB],
-                        dimension: 1,
-                        position: function positionFn(data, index) {
-                            var bodyA = this.bodies[0];
-                            var bodyB = this.bodies[1];
-                            data[index] = (Math.PI / 5 * (bodyA.getPosition()[0] - 35)) - bodyB.getRotation();
-                        },
-                        jacobian: function jacobianFn(data, index) {
-                            data[index] = (Math.PI / 5);
-                            data[index + 1] = 0;
-                            data[index + 2] = 0;
-
-                            data[index + 3] = 0;
-                            data[index + 4] = 0;
-                            data[index + 5] = -1;
-                        },
-                        debugDraw: function debugDrawFn(debug, stiff) {
-                            if (stiff) {
-                                return;
-                            }
-
-                            var bodyA = this.bodies[0];
-                            var bodyB = this.bodies[1];
-
-                            var posA = bodyA.getPosition();
-                            var posB = bodyB.getPosition();
-
-                            // target for x-position of bodyA
-                            var targetX = ((bodyB.getRotation()) / (Math.PI / 5)) + 35;
-
-                            // target for rotation of bodyB
-                            var targetR = (Math.PI / 5 * (posA[0] - 35));
-
-                            // 3 pixel spring radius
-                            var radius = 3 * debug.screenToPhysics2D;
-                            debug.drawLinearSpring(posA[0], posA[1], targetX, posA[1], 3, radius, [1, 0, 0, 1]);
-                            debug.drawSpiralSpring(posB[0], posB[1], targetR, bodyB.getRotation(), radius, radius * 2, [0, 0, 1, 1]);
-                        },
-                        stiff: (!elasticConstraints),
-                        frequency: frequency,
-                        damping: damping
-                    });
-                    world.addConstraint(user);
-                }
-                reset();
-
-                function invalidateConstraints() {
-                    var constraints = world.constraints;
-                    var limit = constraints.length;
-                    var i;
-                    for (i = 0; i < limit; i += 1) {
-                        var con = constraints[i];
-
-                        if (con === handConstraint || con.userData === "pin") {
-                            continue;
-                        }
-
-                        con.configure({
-                            stiff: (!elasticConstraints),
-                            frequency: frequency,
-                            damping: damping
-                        });
-                    }
-                }
+                _this.reset();
 
                 //==========================================================================
                 // Mouse/Keyboard controls
                 //==========================================================================
-                var inputDevice = TurbulenzEngine.createInputDevice({});
-                var keyCodes = inputDevice.keyCodes;
-                var mouseCodes = inputDevice.mouseCodes;
+                _this.inputDevice = TurbulenzEngine.createInputDevice({});
+                _this.keyCodes = _this.inputDevice.keyCodes;
+                _this.mouseCodes = _this.inputDevice.mouseCodes;
 
-                var mouseX = 0;
-                var mouseY = 0;
-                var onMouseOver = function mouseOverFn(x, y) {
-                    mouseX = x;
-                    mouseY = y;
+                _this.mouseX = 0;
+                _this.mouseY = 0;
+                var onMouseOver = function (x, y) {
+                    _this.mouseX = x;
+                    _this.mouseY = y;
                 };
-                inputDevice.addEventListener('mouseover', onMouseOver);
+                _this.inputDevice.addEventListener('mouseover', onMouseOver);
 
-                var onKeyUp = function onKeyUpFn(keynum) {
-                    if (keynum === keyCodes.R) {
-                        reset();
+                var onKeyUp = function (keynum) {
+                    if (keynum === _this.keyCodes.R) {
+                        _this.reset();
                     }
                 };
-                inputDevice.addEventListener('keyup', onKeyUp);
+                _this.inputDevice.addEventListener('keyup', onKeyUp);
 
-                var onMouseDown = function onMouseDownFn(code, x, y) {
-                    mouseX = x;
-                    mouseY = y;
+                var onMouseDown = function (code, x, y) {
+                    _this.mouseX = x;
+                    _this.mouseY = y;
 
-                    if (handConstraint) {
+                    if (_this.handConstraint) {
                         return;
                     }
 
-                    var point = draw2D.viewportMap(x, y);
+                    var point = _this.draw2D.viewportMap(x, y);
                     var body;
-                    if (code === mouseCodes.BUTTON_0) {
+                    if (code === _this.mouseCodes.BUTTON_0) {
                         var bodies = [];
-                        var numBodies = world.bodyPointQuery(point, bodies);
+                        var numBodies = _this.world.bodyPointQuery(point, bodies);
                         var i;
                         for (i = 0; i < numBodies; i += 1) {
                             body = bodies[i];
                             if (body.isDynamic()) {
-                                handConstraint = phys2D.createPointConstraint({
-                                    bodyA: staticReferenceBody,
+                                _this.handConstraint = _this.phys2D.createPointConstraint({
+                                    bodyA: _this.staticReferenceBody,
                                     bodyB: body,
                                     anchorA: point,
                                     anchorB: body.transformWorldPointToLocal(point),
                                     stiff: false,
                                     maxForce: 1e5
                                 });
-                                world.addConstraint(handConstraint);
+                                _this.world.addConstraint(_this.handConstraint);
                             }
                         }
                     }
                 };
-                inputDevice.addEventListener('mousedown', onMouseDown);
+                _this.inputDevice.addEventListener('mousedown', onMouseDown);
 
-                var onMouseLeaveUp = function onMouseLeaveUpFn() {
-                    if (handConstraint) {
-                        world.removeConstraint(handConstraint);
-                        handConstraint = null;
+                var onMouseLeaveUp = function () {
+                    if (_this.handConstraint) {
+                        _this.world.removeConstraint(_this.handConstraint);
+                        _this.handConstraint = null;
                     }
                 };
-                inputDevice.addEventListener('mouseleave', onMouseLeaveUp);
-                inputDevice.addEventListener('mouseup', onMouseLeaveUp);
+                _this.inputDevice.addEventListener('mouseleave', onMouseLeaveUp);
+                _this.inputDevice.addEventListener('mouseup', onMouseLeaveUp);
 
                 //==========================================================================
                 // Main loop.
                 //==========================================================================
-                var realTime = 0;
-                var prevTime = TurbulenzEngine.time;
-
-                var fontTechnique, fontTechniqueParameters;
-                function mainLoop() {
-                    if (!graphicsDevice.beginFrame()) {
-                        return;
-                    }
-
-                    inputDevice.update();
-                    graphicsDevice.clear([0.3, 0.3, 0.3, 1.0]);
-
-                    if (handConstraint) {
-                        handConstraint.setAnchorA(draw2D.viewportMap(mouseX, mouseY));
-                    }
-
-                    var curTime = TurbulenzEngine.time;
-                    var timeDelta = (curTime - prevTime);
-
-                    if (timeDelta > (1 / 20)) {
-                        timeDelta = (1 / 20);
-                    }
-                    realTime += timeDelta;
-                    prevTime = curTime;
-
-                    while (world.simulatedTime < realTime) {
-                        world.step(1 / 60);
-                    }
-
-                    // physics2D debug drawing.
-                    debug.setScreenViewport(draw2D.getScreenSpaceViewport());
-
-                    debug.begin();
-                    debug.drawWorld(world);
-                    debug.end();
-
-                    // Draw fonts.
-                    graphicsDevice.setTechnique(fontTechnique);
-                    fontTechniqueParameters.clipSpace = mathDevice.v4Build(2 / graphicsDevice.width, -2 / graphicsDevice.height, -1, 1, fontTechniqueParameters.clipSpace);
-                    graphicsDevice.setTechniqueParameters(fontTechniqueParameters);
-
-                    function segmentFont(x, y, text, height) {
-                        var topLeft = draw2D.viewportUnmap(x, y);
-                        var bottomRight = draw2D.viewportUnmap(x + 10, y + height);
-                        font.drawTextRect(text, {
-                            rect: [topLeft[0], topLeft[1], bottomRight[0] - topLeft[0], bottomRight[1] - topLeft[1]],
-                            scale: 1.0,
-                            spacing: 0,
-                            alignment: 1
-                        });
-                    }
-
-                    var titleHeight = 0.75;
-                    segmentFont(0, 0, "Point", titleHeight);
-                    segmentFont(10, 0, "Weld", titleHeight);
-                    segmentFont(20, 0, "Distance", titleHeight);
-                    segmentFont(30, 0, "Line", titleHeight);
-                    segmentFont(0, 10, "Angle", titleHeight);
-                    segmentFont(10, 10, "Motor", titleHeight);
-                    segmentFont(20, 10, "Pulley", titleHeight);
-                    segmentFont(30, 10, "Custom", titleHeight);
-
-                    graphicsDevice.endFrame();
-                }
+                _this.realTime = 0;
+                _this.prevTime = TurbulenzEngine.time;
 
                 var intervalID = 0;
-                function loadingLoop() {
-                    if (font && shader) {
-                        fontTechnique = shader.getTechnique('font');
-                        fontTechniqueParameters = graphicsDevice.createTechniqueParameters({
-                            clipSpace: mathDevice.v4BuildZero(),
+
+                var loadingLoop = function () {
+                    if (_this.font && _this.shader) {
+                        _this.fontTechnique = _this.shader.getTechnique('font');
+                        _this.fontTechniqueParameters = _this.graphicsDevice.createTechniqueParameters({
+                            clipSpace: _this.mathDevice.v4BuildZero(),
                             alphaRef: 0.01,
-                            color: mathDevice.v4BuildOne()
+                            color: _this.mathDevice.v4BuildOne()
                         });
 
                         TurbulenzEngine.clearInterval(intervalID);
-                        intervalID = TurbulenzEngine.setInterval(mainLoop, 1000 / 60);
+                        intervalID = TurbulenzEngine.setInterval(_this.mainLoop.bind(_this), 1000 / 60);
                     }
-                }
+                };
+
                 intervalID = TurbulenzEngine.setInterval(loadingLoop, 100);
 
                 //==========================================================================
-                function loadHtmlControls() {
-                    htmlControls = HTMLControls.create();
-                    htmlControls.addCheckboxControl({
-                        id: "elasticConstraints",
-                        value: "elasticConstraints",
-                        isSelected: elasticConstraints,
-                        fn: function () {
-                            elasticConstraints = !elasticConstraints;
-                            invalidateConstraints();
-                            return elasticConstraints;
-                        }
-                    });
-                    htmlControls.addSliderControl({
-                        id: "frequencySlider",
-                        value: (frequency),
-                        max: 10,
-                        min: 0.25,
-                        step: 0.25,
-                        fn: function () {
-                            frequency = this.value;
-                            htmlControls.updateSlider("frequencySlider", frequency);
-                            if (elasticConstraints) {
-                                invalidateConstraints();
-                            }
-                        }
-                    });
-                    htmlControls.addSliderControl({
-                        id: "dampingSlider",
-                        value: (damping),
-                        max: 2,
-                        min: 0,
-                        step: 0.25,
-                        fn: function () {
-                            damping = this.value;
-                            htmlControls.updateSlider("dampingSlider", damping);
-                            if (elasticConstraints) {
-                                invalidateConstraints();
-                            }
-                        }
-                    });
-                    htmlControls.register();
-                }
-
-                loadHtmlControls();
+                _this.loadHtmlControls();
 
                 // Create a scene destroy callback to run when the window is closed
-                TurbulenzEngine.onunload = function destroyScene() {
+                TurbulenzEngine.onunload = function () {
                     if (intervalID) {
                         TurbulenzEngine.clearInterval(intervalID);
                     }
 
-                    if (gameSession) {
-                        gameSession.destroy();
-                        gameSession = null;
+                    if (_this.gameSession) {
+                        _this.gameSession.destroy();
+                        _this.gameSession = null;
                     }
                 };
             };
@@ -620,7 +226,7 @@ var stovis;
 
             var canvas = document.getElementById('turbulenz_game_engine_canvas');
 
-            var startCanvas = function startCanvasFn() {
+            var startCanvas = function () {
                 if (canvas.getContext && canvasSupported) {
                     TurbulenzEngine = WebGLTurbulenzEngine.create({
                         canvas: canvas,
@@ -651,6 +257,414 @@ var stovis;
             // end physics2d_constraints_canvas_debug  *******************************
             console.log("Done with Editor constructor");
         }
+        Editor.prototype.circle = function (x, y, radius, pinned) {
+            var body = this.phys2D.createRigidBody({
+                shapes: [
+                    this.phys2D.createCircleShape({
+                        radius: radius
+                    })
+                ],
+                position: [x, y]
+            });
+            this.world.addRigidBody(body);
+
+            if (pinned) {
+                var pin = this.phys2D.createPointConstraint({
+                    bodyA: this.staticReferenceBody,
+                    bodyB: body,
+                    anchorA: [x, y],
+                    anchorB: [0, 0],
+                    userData: "pin"
+                });
+                this.world.addConstraint(pin);
+            }
+
+            return body;
+        };
+
+        Editor.prototype.reset = function () {
+            // Remove all bodies and constraints from world.
+            this.world.clear();
+            this.handConstraint = null;
+
+            // Create a static body around the stage to stop objects leaving the viewport.
+            // And walls between each constraint section.
+            var border = this.phys2D.createRigidBody({
+                type: 'static'
+            });
+
+            var i;
+            for (i = 0; i <= 4; i += 1) {
+                var x = (this.stageWidth / 4) * i;
+                border.addShape(this.phys2D.createPolygonShape({
+                    vertices: this.phys2D.createRectangleVertices(x - this.thickness, 0, x + this.thickness, this.stageHeight)
+                }));
+            }
+            for (i = 0; i <= 2; i += 1) {
+                var y = (this.stageHeight / 2) * i;
+                border.addShape(this.phys2D.createPolygonShape({
+                    vertices: this.phys2D.createRectangleVertices(0, y - this.thickness, this.stageWidth, y + this.thickness)
+                }));
+            }
+
+            this.world.addRigidBody(border);
+
+            var bodyA, bodyB, worldAnchor;
+
+            // ------------------------------------
+            // Point Constraint
+            bodyA = this.circle(3.3, 5, 1);
+            bodyB = this.circle(6.6, 5, 1);
+
+            worldAnchor = [5, 5];
+            var pointConstraint = this.phys2D.createPointConstraint({
+                bodyA: bodyA,
+                bodyB: bodyB,
+                anchorA: bodyA.transformWorldPointToLocal(worldAnchor),
+                anchorB: bodyB.transformWorldPointToLocal(worldAnchor),
+                stiff: (!this.elasticConstraints),
+                frequency: this.frequency,
+                damping: this.damping
+            });
+            this.world.addConstraint(pointConstraint);
+
+            // ------------------------------------
+            // Weld Constraint
+            bodyA = this.circle(13.3, 5, 1);
+            bodyB = this.circle(16.6, 5, 1);
+
+            worldAnchor = [15, 5];
+            var weldConstraint = this.phys2D.createWeldConstraint({
+                bodyA: bodyA,
+                bodyB: bodyB,
+                anchorA: bodyA.transformWorldPointToLocal(worldAnchor),
+                anchorB: bodyB.transformWorldPointToLocal(worldAnchor),
+                phase: 0,
+                stiff: (!this.elasticConstraints),
+                frequency: this.frequency,
+                damping: this.damping
+            });
+            this.world.addConstraint(weldConstraint);
+
+            // ------------------------------------
+            // Distance Constraint
+            bodyA = this.circle(23.3, 5, 1);
+            bodyB = this.circle(26.6, 5, 1);
+
+            var distanceConstraint = this.phys2D.createDistanceConstraint({
+                bodyA: bodyA,
+                bodyB: bodyB,
+                anchorA: [1, 0],
+                anchorB: [-1, 0],
+                lowerBound: 1,
+                upperBound: 3,
+                stiff: (!this.elasticConstraints),
+                frequency: this.frequency,
+                damping: this.damping
+            });
+            this.world.addConstraint(distanceConstraint);
+
+            // ------------------------------------
+            // Line Constraint
+            bodyA = this.circle(33.3, 5, 1);
+            bodyB = this.circle(36.6, 5, 1);
+
+            worldAnchor = [35, 5];
+            var lineConstraint = this.phys2D.createLineConstraint({
+                bodyA: bodyA,
+                bodyB: bodyB,
+                anchorA: bodyA.transformWorldPointToLocal(worldAnchor),
+                anchorB: bodyB.transformWorldPointToLocal(worldAnchor),
+                axis: [0, 1],
+                lowerBound: -1,
+                upperBound: 1,
+                stiff: (!this.elasticConstraints),
+                frequency: this.frequency,
+                damping: this.damping
+            });
+            this.world.addConstraint(lineConstraint);
+
+            // ------------------------------------
+            // Angle Constraint
+            bodyA = this.circle(3, 15, 1.5, true);
+            bodyB = this.circle(7, 15, 1.5, true);
+
+            var angleConstraint = this.phys2D.createAngleConstraint({
+                bodyA: bodyA,
+                bodyB: bodyB,
+                ratio: 3,
+                lowerBound: -Math.PI * 2,
+                upperBound: Math.PI * 2,
+                stiff: (!this.elasticConstraints),
+                frequency: this.frequency,
+                damping: this.damping
+            });
+            this.world.addConstraint(angleConstraint);
+
+            // ------------------------------------
+            // Motor Constraint
+            bodyA = this.circle(13, 15, 1.5, true);
+            bodyB = this.circle(17, 15, 1.5, true);
+
+            var motorConstraint = this.phys2D.createMotorConstraint({
+                bodyA: bodyA,
+                bodyB: bodyB,
+                ratio: 4,
+                rate: 20
+            });
+            this.world.addConstraint(motorConstraint);
+
+            // ------------------------------------
+            // Pulley Constraint
+            var bodyC;
+            bodyA = this.circle(23.3, 16.6, 0.5);
+            bodyB = this.circle(25, 13.3, 1, true);
+            bodyC = this.circle(26.6, 16.6, 0.5);
+
+            // Additional distance constraints to prevent pulley
+            // becoming degenerate when one side becomes 0 length.
+            var distanceA = this.phys2D.createDistanceConstraint({
+                bodyA: bodyA,
+                bodyB: bodyB,
+                lowerBound: 0.25,
+                upperBound: Number.POSITIVE_INFINITY,
+                anchorA: [0, -0.5],
+                anchorB: [-1, 0],
+                userData: 'pin'
+            });
+            this.world.addConstraint(distanceA);
+
+            var distanceB = this.phys2D.createDistanceConstraint({
+                bodyA: bodyC,
+                bodyB: bodyB,
+                lowerBound: 0.25,
+                upperBound: Number.POSITIVE_INFINITY,
+                anchorA: [0, -0.5],
+                anchorB: [1, 0],
+                userData: 'pin'
+            });
+            this.world.addConstraint(distanceB);
+
+            var pulleyConstraint = this.phys2D.createPulleyConstraint({
+                bodyA: bodyA,
+                bodyB: bodyB,
+                bodyC: bodyB,
+                bodyD: bodyC,
+                anchorA: [0, -0.5],
+                anchorB: [-1, 0],
+                anchorC: [1, 0],
+                anchorD: [0, -0.5],
+                ratio: 2,
+                lowerBound: 6,
+                upperBound: 8,
+                stiff: (!this.elasticConstraints),
+                frequency: this.frequency,
+                damping: this.damping
+            });
+            this.world.addConstraint(pulleyConstraint);
+
+            // ------------------------------------
+            // Custom Constraint
+            bodyA = this.circle(35, 13.3, 1);
+            bodyB = this.circle(35, 16.6, 1, true);
+
+            // Additional line constraint to pin upper body to rack.
+            var line = this.phys2D.createLineConstraint({
+                bodyA: this.staticReferenceBody,
+                bodyB: bodyA,
+                anchorA: [35, 13.3],
+                anchorB: [0, 0],
+                axis: [1, 0],
+                lowerBound: -5,
+                upperBound: 5,
+                userData: 'pin'
+            });
+            this.world.addConstraint(line);
+
+            // Custom constraint defined so that the x-position of
+            // the first body, is equal to the rotation of the
+            // second body.
+            //
+            // Constraint equation:
+            //    (pi / 5) * (bodyA.posX - 35) - bodyB.rotation = 0
+            //
+            // Time Derivative (Velocity constraint):
+            //    (pi / 5) * bodyA.velX - bodyB.angularVel = 0
+            //
+            // Partial derivatives of velocity constraint (Jacobian)
+            //        velAx   velAy  angVelA  velBx  velBy  angVelB
+            //    [ (pi / 5),   0,      0,      0,     0,     -1    ]
+            //
+            var user = this.phys2D.createCustomConstraint({
+                bodies: [bodyA, bodyB],
+                dimension: 1,
+                position: function positionFn(data, index) {
+                    var bodyA = this.bodies[0];
+                    var bodyB = this.bodies[1];
+                    data[index] = (Math.PI / 5 * (bodyA.getPosition()[0] - 35)) - bodyB.getRotation();
+                },
+                jacobian: function jacobianFn(data, index) {
+                    data[index] = (Math.PI / 5);
+                    data[index + 1] = 0;
+                    data[index + 2] = 0;
+
+                    data[index + 3] = 0;
+                    data[index + 4] = 0;
+                    data[index + 5] = -1;
+                },
+                debugDraw: function debugDrawFn(debug, stiff) {
+                    if (stiff) {
+                        return;
+                    }
+
+                    var bodyA = this.bodies[0];
+                    var bodyB = this.bodies[1];
+
+                    var posA = bodyA.getPosition();
+                    var posB = bodyB.getPosition();
+
+                    // target for x-position of bodyA
+                    var targetX = ((bodyB.getRotation()) / (Math.PI / 5)) + 35;
+
+                    // target for rotation of bodyB
+                    var targetR = (Math.PI / 5 * (posA[0] - 35));
+
+                    // 3 pixel spring radius
+                    var radius = 3 * debug.screenToPhysics2D;
+                    debug.drawLinearSpring(posA[0], posA[1], targetX, posA[1], 3, radius, [1, 0, 0, 1]);
+                    debug.drawSpiralSpring(posB[0], posB[1], targetR, bodyB.getRotation(), radius, radius * 2, [0, 0, 1, 1]);
+                },
+                stiff: (!this.elasticConstraints),
+                frequency: this.frequency,
+                damping: this.damping
+            });
+            this.world.addConstraint(user);
+        };
+
+        Editor.prototype.invalidateConstraints = function () {
+            var constraints = this.world.constraints;
+            var limit = constraints.length;
+            var i;
+            for (i = 0; i < limit; i += 1) {
+                var con = constraints[i];
+
+                if (con === this.handConstraint || con.userData === "pin") {
+                    continue;
+                }
+
+                con.configure({
+                    stiff: (!this.elasticConstraints),
+                    frequency: this.frequency,
+                    damping: this.damping
+                });
+            }
+        };
+
+        Editor.prototype.mainLoop = function () {
+            var _this = this;
+            if (!this.graphicsDevice.beginFrame()) {
+                return;
+            }
+
+            this.inputDevice.update();
+            this.graphicsDevice.clear([0.3, 0.3, 0.3, 1.0]);
+
+            if (this.handConstraint) {
+                this.handConstraint.setAnchorA(this.draw2D.viewportMap(this.mouseX, this.mouseY));
+            }
+
+            var curTime = TurbulenzEngine.time;
+            var timeDelta = (curTime - this.prevTime);
+
+            if (timeDelta > (1 / 20)) {
+                timeDelta = (1 / 20);
+            }
+            this.realTime += timeDelta;
+            this.prevTime = curTime;
+
+            while (this.world.simulatedTime < this.realTime) {
+                this.world.step(1 / 60);
+            }
+
+            // physics2D debug drawing.
+            this.debug.setScreenViewport(this.draw2D.getScreenSpaceViewport());
+
+            this.debug.begin();
+            this.debug.drawWorld(this.world);
+            this.debug.end();
+
+            // Draw fonts.
+            this.graphicsDevice.setTechnique(this.fontTechnique);
+            this.fontTechniqueParameters.clipSpace = this.mathDevice.v4Build(2 / this.graphicsDevice.width, -2 / this.graphicsDevice.height, -1, 1, this.fontTechniqueParameters.clipSpace);
+            this.graphicsDevice.setTechniqueParameters(this.fontTechniqueParameters);
+
+            var segmentFont = function (x, y, text, height) {
+                var topLeft = _this.draw2D.viewportUnmap(x, y);
+                var bottomRight = _this.draw2D.viewportUnmap(x + 10, y + height);
+                _this.font.drawTextRect(text, {
+                    rect: [topLeft[0], topLeft[1], bottomRight[0] - topLeft[0], bottomRight[1] - topLeft[1]],
+                    scale: 1.0,
+                    spacing: 0,
+                    alignment: 1
+                });
+            };
+
+            var titleHeight = 0.75;
+            segmentFont(0, 0, "Point", titleHeight);
+            segmentFont(10, 0, "Weld", titleHeight);
+            segmentFont(20, 0, "Distance", titleHeight);
+            segmentFont(30, 0, "Line", titleHeight);
+            segmentFont(0, 10, "Angle", titleHeight);
+            segmentFont(10, 10, "Motor", titleHeight);
+            segmentFont(20, 10, "Pulley", titleHeight);
+            segmentFont(30, 10, "Custom", titleHeight);
+
+            this.graphicsDevice.endFrame();
+        };
+
+        Editor.prototype.loadHtmlControls = function () {
+            var self = this;
+            this.htmlControls = HTMLControls.create();
+            this.htmlControls.addCheckboxControl({
+                id: "elasticConstraints",
+                value: "elasticConstraints",
+                isSelected: self.elasticConstraints,
+                fn: function () {
+                    self.elasticConstraints = !self.elasticConstraints;
+                    self.invalidateConstraints();
+                    return self.elasticConstraints;
+                }
+            });
+            this.htmlControls.addSliderControl({
+                id: "frequencySlider",
+                value: (self.frequency),
+                max: 10,
+                min: 0.25,
+                step: 0.25,
+                fn: function () {
+                    self.frequency = this.value;
+                    self.htmlControls.updateSlider("frequencySlider", self.frequency);
+                    if (self.elasticConstraints) {
+                        self.invalidateConstraints();
+                    }
+                }
+            });
+            this.htmlControls.addSliderControl({
+                id: "dampingSlider",
+                value: (self.damping),
+                max: 2,
+                min: 0,
+                step: 0.25,
+                fn: function () {
+                    self.damping = this.value;
+                    self.htmlControls.updateSlider("dampingSlider", self.damping);
+                    if (self.elasticConstraints) {
+                        self.invalidateConstraints();
+                    }
+                }
+            });
+            this.htmlControls.register();
+        };
         Editor.labels = ["L", "[]", "head", "tail"];
         return Editor;
     })();

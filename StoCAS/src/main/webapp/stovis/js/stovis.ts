@@ -36,7 +36,7 @@ declare var canvasSupported: boolean;
 module stovis {
 
     export var DEFAULT_BACKGROUND_COLOR = "#2e2e2e";
-    export var DEFAULT_FILL_COLOR = "#ffbaba";
+    export var DEFAULT_FILL_COLOR = [1, 1, 1, 1]; // "#ffbaba";
     export var DEFAULT_STROKE_COLOR = "#ff7a7a";
     /** max field size in pixel */
     export var MAX_FIELD_LENGTH = 20000;
@@ -46,6 +46,15 @@ module stovis {
     */
     class ExperimentalElem {
 
+    }
+
+    export class Node {
+        label: string;
+        body : Physics2DRigidBody;
+        constructor(label: string, body: Physics2DRigidBody){
+            this.label = label;
+            this.body = body;
+        }
     }
 
 
@@ -83,6 +92,13 @@ module stovis {
 
         debug: Physics2DDebugDraw;
 
+        framesPerSecond: number;
+
+        debugEnabled: boolean;
+        debugMessagesPerSecond: number; // integer;
+        contactsEnabled: boolean;
+
+
         world: Physics2DWorld;
 
         staticReferenceBody: Physics2DRigidBody;
@@ -104,6 +120,33 @@ module stovis {
         fontTechnique: Technique;
         fontTechniqueParameters: any;
 
+        addNode(x: number, y: number, radius: number, text: string, pinned?: boolean) {
+            var node = new Node(text, null);
+            var body = this.phys2D.createRigidBody({
+                shapes: [
+                    this.phys2D.createCircleShape({
+                        radius: radius
+                    })
+                ],
+                position: [x, y],
+                userData: node
+            });
+            node.body = body;
+            this.world.addRigidBody(body);
+
+            if (pinned) {
+                var pin = this.phys2D.createPointConstraint({
+                    bodyA: this.staticReferenceBody,
+                    bodyB: body,
+                    anchorA: [x, y],
+                    anchorB: [0, 0],
+                    userData: "pin"
+                });
+                this.world.addConstraint(pin);
+            }
+
+            return body;
+        }
 
         circle(x, y, radius, pinned?: boolean) {
             var body = this.phys2D.createRigidBody({
@@ -163,9 +206,9 @@ module stovis {
             var bodyA, bodyB, worldAnchor;
 
             // ------------------------------------
-            // Point Constraint
-            bodyA = this.circle(3.3, 5, 1);
-            bodyB = this.circle(6.6, 5, 1);
+            // tree layout
+            bodyA = this.addNode(3.3, 5, 1, "A");
+            bodyB = this.addNode(6.6, 5, 1, "B");
 
             worldAnchor = [5, 5];
             var pointConstraint = this.phys2D.createPointConstraint({
@@ -411,6 +454,64 @@ module stovis {
             }
         }
 
+        segmentFont(x, y, text, height) {
+            var topLeft = this.draw2D.viewportUnmap(x, y);
+            var bottomRight = this.draw2D.viewportUnmap(x + 10, y + height);
+            this.font.drawTextRect(text, {
+                rect: [topLeft[0], topLeft[1], bottomRight[0] - topLeft[0], bottomRight[1] - topLeft[1]],
+                scale: 1.0,
+                spacing: 0,
+                alignment: 1
+            });
+        }
+
+        /**
+            x and y are the upper left corner of the text. i.e. 0,0 for upper left corner of the screen
+            width, height: i.e. 10,10 for a box like in physics 2d contraints example. 
+            Currently they don't even work, in theory they are needed to define the maximum allowed region where to draw
+            Semms like a font has width and height of 1.0, when scaling factor is 1.0
+            todo should determine scale / linebreaks accordingly. 
+            todo - is this the right place to set fontTechnique? guess not.
+        */
+        drawCenteredText(x: number, y: number, text: string, width: number, height: number) {
+            // Notice long text will exceed width.Height is not even taken into account by Turbulenz
+            /** fonts won't exceed this width */
+            var fontWidth = 1.0;
+            /** fonts won't exceed this height */
+            var fontHeight = 1.0;
+            var fontSpacing = 0.0 
+            var topLeft = this.draw2D.viewportUnmap(x-text.length / 2, y - fontHeight/2);
+            var bottomRight = this.draw2D.viewportUnmap(x + text.length / 2, y + fontHeight / 2);
+
+            this.graphicsDevice.setTechnique(this.fontTechnique);
+            this.fontTechniqueParameters.clipSpace = this.mathDevice.v4Build(2 / this.graphicsDevice.width, -2 / this.graphicsDevice.height, -1, 1, this.fontTechniqueParameters.clipSpace);
+            this.graphicsDevice.setTechniqueParameters(this.fontTechniqueParameters);
+
+            this.font.drawTextRect(text, {
+                // NOTICE:  rect: [x, y, width, height] Currently, the height is always ignored
+                rect: [topLeft[0], topLeft[1], bottomRight[0] - topLeft[0], bottomRight[1] - topLeft[1]],
+                scale: 1.0,
+                spacing: fontSpacing,
+                alignment: 1 //  center aligned
+            });
+        }
+
+        drawNode(node: Node) {
+            // console.log("Drawing node", node);
+            var pos = node.body.getPosition();   
+            var circle = node.body.shapes[0];
+            // assuming a circle body - these constants are awful! Don't they have a CircleShape class??           
+            var data = circle._data;
+            var radius = data[(/*CIRCLE_RADIUS*/6)];
+
+            this.debug.drawRigidBody(node.body);
+            if (this.world.timeStamp % (Math.floor(this.framesPerSecond / this.debugMessagesPerSecond)) === 0) {
+                console.log("pos[0] : ", pos[0], "pos[1] : ", pos[1], "radius : ", radius);
+            }
+
+                 
+            this.drawCenteredText(pos[0], pos[1], node.label, radius, radius);
+        }
 
         mainLoop() {
             if (!this.graphicsDevice.beginFrame()) {
@@ -434,36 +535,58 @@ module stovis {
             this.prevTime = curTime;
 
             while (this.world.simulatedTime < this.realTime) {
-                this.world.step(1 / 60);
+                this.world.step(1 / this.framesPerSecond);
+            }
+
+
+
+            // draw2D sprite drawing.
+            var bodies = this.world.rigidBodies;
+            var limit = bodies.length;
+            var i;
+            if (!this.debugEnabled) {                
+                this.draw2D.begin('alpha', 'deferred');
+                var pos = [];
+                for (i = 0; i < limit; i += 1) {                   
+                    var body = bodies[i];
+                    if (body.userData) {
+                        body.getPosition(pos);
+                        var node = body.userData;                        
+                        this.drawNode(node);                        
+                    }
+                }
+                this.draw2D.end();
             }
 
             // physics2D debug drawing.
             this.debug.setScreenViewport(this.draw2D.getScreenSpaceViewport());
+            this.debug.showRigidBodies = this.debugEnabled;
+            this.debug.showContacts = this.contactsEnabled;
 
             this.debug.begin();
+            if (!this.debugEnabled) {
+                for (i = 0; i < limit; i += 1) {
+                    var body = bodies[i];
+                    if (!body.userData) {
+                        this.debug.drawRigidBody(body);
+                    }
+                }
+            }
             this.debug.drawWorld(this.world);
             this.debug.end();
 
 
 
             // Draw fonts.
+
             this.graphicsDevice.setTechnique(this.fontTechnique);
             this.fontTechniqueParameters.clipSpace = this.mathDevice.v4Build(2 / this.graphicsDevice.width, -2 / this.graphicsDevice.height, -1, 1, this.fontTechniqueParameters.clipSpace);
             this.graphicsDevice.setTechniqueParameters(this.fontTechniqueParameters);
 
-            var segmentFont = (x, y, text, height) => {
-                var topLeft = this.draw2D.viewportUnmap(x, y);
-                var bottomRight = this.draw2D.viewportUnmap(x + 10, y + height);
-                this.font.drawTextRect(text, {
-                    rect: [topLeft[0], topLeft[1], bottomRight[0] - topLeft[0], bottomRight[1] - topLeft[1]],
-                    scale: 1.0,
-                    spacing: 0,
-                    alignment: 1
-                });
-            }
-
             var titleHeight = 0.75;
-            segmentFont(0, 0, "Point", titleHeight);
+            this.segmentFont(0, 0, "Tree Layout", titleHeight);
+            this.segmentFont(3.2, 9, "A", 1.0);
+            /*
             segmentFont(10, 0, "Weld", titleHeight);
             segmentFont(20, 0, "Distance", titleHeight);
             segmentFont(30, 0, "Line", titleHeight);
@@ -471,6 +594,9 @@ module stovis {
             segmentFont(10, 10, "Motor", titleHeight);
             segmentFont(20, 10, "Pulley", titleHeight);
             segmentFont(30, 10, "Custom", titleHeight);
+            this.segmentFont(pos[0], pos[1], node.label, radius);
+
+            */
 
             this.graphicsDevice.endFrame();
         }
@@ -523,6 +649,11 @@ module stovis {
 
         constructor(container: HTMLElement) {
             console.log("Beginning of Editor constructor... ");
+
+            this.debugEnabled = false;
+            this.contactsEnabled = false;
+            this.framesPerSecond = 60;
+            this.debugMessagesPerSecond = 1;
 
 
             // physics2d_constraints_canvas_debug  ******************************

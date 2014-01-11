@@ -1,16 +1,21 @@
-/// <reference path="../../stovis/js/stovis.ts" />
-var Greeter = (function () {
-    function Greeter(element) {
+var StoDev = (function () {
+    // if I make it private getSingleton complains, why??
+    function StoDev(element) {
+        console.log("Creating StoDev...");
         this.element = element;
+        this.editor = stovis.addEditor(this.element);
+        console.log("Done creating StoDev.");
     }
-    Greeter.prototype.start = function () {
-        stovis.addEditor(this.element);
+    StoDev.getSingleton = function (element) {
+        if (!StoDev.singleton) {
+            StoDev.singleton = new StoDev(element);
+        }
+        return StoDev.singleton;
     };
-    return Greeter;
+    return StoDev;
 })();
 
 window.onload = function () {
     var el = document.getElementById('content');
-    var greeter = new Greeter(el);
-    greeter.start();
+    stodev = StoDev.getSingleton(el);
 };

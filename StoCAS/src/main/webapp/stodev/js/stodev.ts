@@ -1,28 +1,39 @@
 /// <reference path="../../stovis/js/stovis.ts" />
 
 
+declare var stodev: StoDev;
 
-class Greeter {
+class StoDev {
+
+    private static singleton: StoDev;
+
     element: HTMLElement;
     span: HTMLElement;
     timerToken: number;
+    editor: stovis.Editor;
 
+    
+
+    // if I make it private getSingleton complains, why??
     constructor(element: HTMLElement) {
+        console.log("Creating StoDev...");
         this.element = element;        
+        this.editor = stovis.addEditor(this.element);
+        console.log("Done creating StoDev.");
     }
-     
+      
 
-    start() {
-        stovis.addEditor(this.element);
-
- 
-
+    static getSingleton(element: HTMLElement): StoDev {
+        if (!StoDev.singleton) {
+            StoDev.singleton = new StoDev(element);            
+        } 
+        return StoDev.singleton;
+        
     }
 
 }
 
 window.onload = () => {
     var el = document.getElementById('content');
-    var greeter = new Greeter(el);
-    greeter.start();
+    stodev = StoDev.getSingleton(el);   
 };

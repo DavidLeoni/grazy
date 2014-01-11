@@ -1,6 +1,8 @@
 // Module
 var stovis;
 (function (stovis) {
+    stovis.STOVIS_PREFIX = "stovis";
+    stovis.STOVIS_IRI = "https://github.com/DavidLeoni/StoVis";
     stovis.DEFAULT_BACKGROUND_COLOR = "#2e2e2e";
     stovis.DEFAULT_FILL_COLOR = [1, 1, 1, 1];
     stovis.DEFAULT_STROKE_COLOR = "#ff7a7a";
@@ -18,9 +20,10 @@ var stovis;
     })();
 
     var Node = (function () {
-        function Node(label, body) {
-            this.label = label;
+        function Node(rdfNode, body) {
+            this.rdfNode = rdfNode;
             this.body = body;
+            this.pin = null;
         }
         return Node;
     })();
@@ -33,29 +36,36 @@ var stovis;
             this.frequency = 1;
             this.damping = 0.1;
             this.thickness = 0.01;
-            console.log("Beginning of Editor constructor... ");
+            console.log("Beginning of Stovis Editor constructor... ");
 
             this.debugEnabled = false;
             this.debugMessagesPerSecond = 1;
 
-            rdfstore.create(function (store) {
-                _this.visStore = store;
+            rdfstore.create(function (vs) {
+                _this.visStore = vs;
+                _this.visGraph = vs.rdf.createGraph();
+                _this.nodeMap = {};
 
-                store.rdf.setPrefix("ex", "http://example.org/people/");
-                store.rdf.setPrefix("foaf", "http://xmlns.com/foaf/0.1/");
+                vs.rdf.setPrefix("ex", "http://example.org/people/");
+                vs.rdf.setPrefix("foaf", "http://xmlns.com/foaf/0.1/");
+                vs.rdf.setPrefix("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 
-                var graph = store.rdf.createGraph();
+                vs.rdf.setPrefix(stovis.STOVIS_PREFIX, stovis.STOVIS_IRI);
 
-                graph.add(store.rdf.createTriple(store.rdf.createNamedNode(store.rdf.resolve("ex:Alice")), store.rdf.createNamedNode(store.rdf.resolve("foaf:name")), store.rdf.createLiteral("alice")));
+                console.log("visGraph = ", _this.visGraph);
+                console.log("visStore = ", _this.visStore);
 
-                console.log("graph = ", graph);
-
-                var triples = graph.match(null, store.rdf.createNamedNode(store.rdf.resolve("foaf:name")), null).toArray();
-
+                /**
+                graph.add(vs.rdf.createTriple(vs.rdf.createNamedNode(vs.rdf.resolve("ex:Alice")),
+                vs.rdf.createNamedNode(vs.rdf.resolve("foaf:name")),
+                vs.rdf.createLiteral("alice")));
+                */
+                /*var triples = graph.match(null, vs.rdf.createNamedNode(vs.rdf.resolve("foaf:name")), null).toArray();
+                
                 console.log("triples = ", triples);
-
+                
                 console.log("rdf api worked? " + (triples[0].object.valueOf() === 'alice'));
-
+                */
                 // ************       Graphics stuff    *************************
                 _this.contactsEnabled = false;
                 _this.framesPerSecond = 60;
@@ -130,7 +140,7 @@ var stovis;
                     _this.debug.setPhysics2DViewport([0, 0, _this.stageWidth, _this.stageHeight]);
 
                     _this.world = _this.phys2D.createWorld({
-                        gravity: [0, 20]
+                        gravity: [0, 0]
                     });
 
                     // Create a static body at (0, 0) with no rotation
@@ -290,10 +300,60 @@ var stovis;
             console.log("Done with Editor constructor");
         }
         Editor.prototype.addNodeNearCenter = function (label) {
+            throw new Error("Implement me!");
         };
 
-        Editor.prototype.addNode = function (x, y, radius, text, pinned) {
-            var node = new Node(text, null);
+        Editor.prototype.unpinNode = function (node) {
+            if (node.pin) {
+                this.world.removeConstraint(node.pin);
+            }
+        };
+
+        Editor.prototype.pinNode = function (node) {
+            if (!node.pin) {
+                var pos = node.body.getPosition();
+                node.pin = this.phys2D.createPointConstraint({
+                    bodyA: this.staticReferenceBody,
+                    bodyB: node.body,
+                    anchorA: pos,
+                    anchorB: [0, 0],
+                    userData: "pin"
+                });
+                this.world.addConstraint(node.pin);
+            }
+        };
+
+        /**
+        
+        */
+        Editor.prototype.addRelation = function (nodeA, relation, nodeB, distance) {
+            this.visStore.execute('INSERT DATA {  <' + nodeA.rdfNode.nominalValue + '> <' + relation + '> <' + nodeB.rdfNode.nominalValue + '> }');
+
+            var worldAnchor = [15, 5];
+            var bodyA = nodeA.body;
+            var bodyB = nodeB.body;
+            var weld = this.phys2D.createWeldConstraint({
+                bodyA: bodyA,
+                bodyB: bodyB,
+                anchorA: bodyA.transformWorldPointToLocal(worldAnchor),
+                anchorB: bodyB.transformWorldPointToLocal(worldAnchor),
+                phase: 0,
+                stiff: (!this.elasticConstraints),
+                frequency: this.frequency,
+                damping: this.damping
+            });
+            this.world.addConstraint(weld);
+        };
+
+        Editor.prototype.addNode = function (x, y, radius, iri) {
+            var vs = this.visStore;
+            var rdfNode = vs.rdf.createNamedNode(iri);
+            var node = new Node(rdfNode, null);
+
+            this.nodeMap[vs.rdf.terms.resolve(iri)] = node;
+
+            vs.execute('INSERT DATA {  <' + iri + '> <rdfs:label> "' + vs.rdf.terms.shrink(iri) + '" }');
+
             var body = this.phys2D.createRigidBody({
                 shapes: [
                     this.phys2D.createCircleShape({
@@ -305,19 +365,7 @@ var stovis;
             });
             node.body = body;
             this.world.addRigidBody(body);
-
-            if (pinned) {
-                var pin = this.phys2D.createPointConstraint({
-                    bodyA: this.staticReferenceBody,
-                    bodyB: body,
-                    anchorA: [x, y],
-                    anchorB: [0, 0],
-                    userData: "pin"
-                });
-                this.world.addConstraint(pin);
-            }
-
-            return body;
+            return node;
         };
 
         Editor.prototype.circle = function (x, y, radius, pinned) {
@@ -376,15 +424,26 @@ var stovis;
 
             // ------------------------------------
             // tree layout
-            bodyA = this.addNode(3.3, 5, 1, "A");
-            bodyB = this.addNode(6.6, 5, 1, "B");
+            var nodeC = this.addNode(2, 2, 1, "C");
+            var nodeD = this.addNode(8, 2, 1, "D");
+            this.addRelation(nodeC, "myrel", nodeD, 4);
+
+            var nodeA = this.addNode(3.3, 5, 1, "A");
+            var nodeB = this.addNode(6.6, 5, 1, "B");
+
+            this.visStore.execute("SELECT * { ?s ?p ?o }", function (success, results) {
+                console.log("success: ", success);
+                console.log("results: ", results);
+            });
+
+            console.log("visStore2 = ", this.visStore);
 
             worldAnchor = [5, 5];
             var pointConstraint = this.phys2D.createPointConstraint({
-                bodyA: bodyA,
-                bodyB: bodyB,
-                anchorA: bodyA.transformWorldPointToLocal(worldAnchor),
-                anchorB: bodyB.transformWorldPointToLocal(worldAnchor),
+                bodyA: nodeA.body,
+                bodyB: nodeB.body,
+                anchorA: nodeA.body.transformWorldPointToLocal(worldAnchor),
+                anchorB: nodeB.body.transformWorldPointToLocal(worldAnchor),
                 stiff: (!this.elasticConstraints),
                 frequency: this.frequency,
                 damping: this.damping
@@ -446,162 +505,6 @@ var stovis;
                 damping: this.damping
             });
             this.world.addConstraint(lineConstraint);
-
-            // ------------------------------------
-            // Angle Constraint
-            bodyA = this.circle(3, 15, 1.5, true);
-            bodyB = this.circle(7, 15, 1.5, true);
-
-            var angleConstraint = this.phys2D.createAngleConstraint({
-                bodyA: bodyA,
-                bodyB: bodyB,
-                ratio: 3,
-                lowerBound: -Math.PI * 2,
-                upperBound: Math.PI * 2,
-                stiff: (!this.elasticConstraints),
-                frequency: this.frequency,
-                damping: this.damping
-            });
-            this.world.addConstraint(angleConstraint);
-
-            // ------------------------------------
-            // Motor Constraint
-            bodyA = this.circle(13, 15, 1.5, true);
-            bodyB = this.circle(17, 15, 1.5, true);
-
-            var motorConstraint = this.phys2D.createMotorConstraint({
-                bodyA: bodyA,
-                bodyB: bodyB,
-                ratio: 4,
-                rate: 20
-            });
-            this.world.addConstraint(motorConstraint);
-
-            // ------------------------------------
-            // Pulley Constraint
-            var bodyC;
-            bodyA = this.circle(23.3, 16.6, 0.5);
-            bodyB = this.circle(25, 13.3, 1, true);
-            bodyC = this.circle(26.6, 16.6, 0.5);
-
-            // Additional distance constraints to prevent pulley
-            // becoming degenerate when one side becomes 0 length.
-            var distanceA = this.phys2D.createDistanceConstraint({
-                bodyA: bodyA,
-                bodyB: bodyB,
-                lowerBound: 0.25,
-                upperBound: Number.POSITIVE_INFINITY,
-                anchorA: [0, -0.5],
-                anchorB: [-1, 0],
-                userData: 'pin'
-            });
-            this.world.addConstraint(distanceA);
-
-            var distanceB = this.phys2D.createDistanceConstraint({
-                bodyA: bodyC,
-                bodyB: bodyB,
-                lowerBound: 0.25,
-                upperBound: Number.POSITIVE_INFINITY,
-                anchorA: [0, -0.5],
-                anchorB: [1, 0],
-                userData: 'pin'
-            });
-            this.world.addConstraint(distanceB);
-
-            var pulleyConstraint = this.phys2D.createPulleyConstraint({
-                bodyA: bodyA,
-                bodyB: bodyB,
-                bodyC: bodyB,
-                bodyD: bodyC,
-                anchorA: [0, -0.5],
-                anchorB: [-1, 0],
-                anchorC: [1, 0],
-                anchorD: [0, -0.5],
-                ratio: 2,
-                lowerBound: 6,
-                upperBound: 8,
-                stiff: (!this.elasticConstraints),
-                frequency: this.frequency,
-                damping: this.damping
-            });
-            this.world.addConstraint(pulleyConstraint);
-
-            // ------------------------------------
-            // Custom Constraint
-            bodyA = this.circle(35, 13.3, 1);
-            bodyB = this.circle(35, 16.6, 1, true);
-
-            // Additional line constraint to pin upper body to rack.
-            var line = this.phys2D.createLineConstraint({
-                bodyA: this.staticReferenceBody,
-                bodyB: bodyA,
-                anchorA: [35, 13.3],
-                anchorB: [0, 0],
-                axis: [1, 0],
-                lowerBound: -5,
-                upperBound: 5,
-                userData: 'pin'
-            });
-            this.world.addConstraint(line);
-
-            // Custom constraint defined so that the x-position of
-            // the first body, is equal to the rotation of the
-            // second body.
-            //
-            // Constraint equation:
-            //    (pi / 5) * (bodyA.posX - 35) - bodyB.rotation = 0
-            //
-            // Time Derivative (Velocity constraint):
-            //    (pi / 5) * bodyA.velX - bodyB.angularVel = 0
-            //
-            // Partial derivatives of velocity constraint (Jacobian)
-            //        velAx   velAy  angVelA  velBx  velBy  angVelB
-            //    [ (pi / 5),   0,      0,      0,     0,     -1    ]
-            //
-            var user = this.phys2D.createCustomConstraint({
-                bodies: [bodyA, bodyB],
-                dimension: 1,
-                position: function positionFn(data, index) {
-                    var bodyA = this.bodies[0];
-                    var bodyB = this.bodies[1];
-                    data[index] = (Math.PI / 5 * (bodyA.getPosition()[0] - 35)) - bodyB.getRotation();
-                },
-                jacobian: function jacobianFn(data, index) {
-                    data[index] = (Math.PI / 5);
-                    data[index + 1] = 0;
-                    data[index + 2] = 0;
-
-                    data[index + 3] = 0;
-                    data[index + 4] = 0;
-                    data[index + 5] = -1;
-                },
-                debugDraw: function debugDrawFn(debug, stiff) {
-                    if (stiff) {
-                        return;
-                    }
-
-                    var bodyA = this.bodies[0];
-                    var bodyB = this.bodies[1];
-
-                    var posA = bodyA.getPosition();
-                    var posB = bodyB.getPosition();
-
-                    // target for x-position of bodyA
-                    var targetX = ((bodyB.getRotation()) / (Math.PI / 5)) + 35;
-
-                    // target for rotation of bodyB
-                    var targetR = (Math.PI / 5 * (posA[0] - 35));
-
-                    // 3 pixel spring radius
-                    var radius = 3 * debug.screenToPhysics2D;
-                    debug.drawLinearSpring(posA[0], posA[1], targetX, posA[1], 3, radius, [1, 0, 0, 1]);
-                    debug.drawSpiralSpring(posB[0], posB[1], targetR, bodyB.getRotation(), radius, radius * 2, [0, 0, 1, 1]);
-                },
-                stiff: (!this.elasticConstraints),
-                frequency: this.frequency,
-                damping: this.damping
-            });
-            this.world.addConstraint(user);
         };
 
         Editor.prototype.invalidateConstraints = function () {
@@ -680,7 +583,7 @@ var stovis;
                 console.log("pos[0] : ", pos[0], "pos[1] : ", pos[1], "radius : ", radius);
             }
 
-            this.drawCenteredText(pos[0], pos[1], node.label, radius, radius);
+            this.drawCenteredText(pos[0], pos[1], node.rdfNode.nominalValue, radius, radius);
         };
 
         Editor.prototype.mainLoop = function () {

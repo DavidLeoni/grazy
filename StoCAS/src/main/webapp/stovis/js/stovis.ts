@@ -50,8 +50,8 @@ module stovis {
 
     export class Node {
         label: string;
-        body : Physics2DRigidBody;
-        constructor(label: string, body: Physics2DRigidBody){
+        body: Physics2DRigidBody;
+        constructor(label: string, body: Physics2DRigidBody) {
             this.label = label;
             this.body = body;
         }
@@ -119,6 +119,11 @@ module stovis {
 
         fontTechnique: Technique;
         fontTechniqueParameters: any;
+
+
+        addNodeNearCenter(label: string) {
+        }
+
 
         addNode(x: number, y: number, radius: number, text: string, pinned?: boolean) {
             var node = new Node(text, null);
@@ -479,8 +484,8 @@ module stovis {
             var fontWidth = 1.0;
             /** fonts won't exceed this height */
             var fontHeight = 1.0;
-            var fontSpacing = 0.0 
-            var topLeft = this.draw2D.viewportUnmap(x-text.length / 2, y - fontHeight/2);
+            var fontSpacing = 0.0
+            var topLeft = this.draw2D.viewportUnmap(x - text.length / 2, y - fontHeight / 2);
             var bottomRight = this.draw2D.viewportUnmap(x + text.length / 2, y + fontHeight / 2);
 
             this.graphicsDevice.setTechnique(this.fontTechnique);
@@ -498,7 +503,7 @@ module stovis {
 
         drawNode(node: Node) {
             // console.log("Drawing node", node);
-            var pos = node.body.getPosition();   
+            var pos = node.body.getPosition();
             var circle = node.body.shapes[0];
             // assuming a circle body - these constants are awful! Don't they have a CircleShape class??           
             var data = circle._data;
@@ -509,7 +514,7 @@ module stovis {
                 console.log("pos[0] : ", pos[0], "pos[1] : ", pos[1], "radius : ", radius);
             }
 
-                 
+
             this.drawCenteredText(pos[0], pos[1], node.label, radius, radius);
         }
 
@@ -544,15 +549,15 @@ module stovis {
             var bodies = this.world.rigidBodies;
             var limit = bodies.length;
             var i;
-            if (!this.debugEnabled) {                
+            if (!this.debugEnabled) {
                 this.draw2D.begin('alpha', 'deferred');
                 var pos = [];
-                for (i = 0; i < limit; i += 1) {                   
+                for (i = 0; i < limit; i += 1) {
                     var body = bodies[i];
                     if (body.userData) {
                         body.getPosition(pos);
-                        var node = body.userData;                        
-                        this.drawNode(node);                        
+                        var node = body.userData;
+                        this.drawNode(node);
                     }
                 }
                 this.draw2D.end();
@@ -609,7 +614,7 @@ module stovis {
                 id: "elasticConstraints",
                 value: "elasticConstraints",
                 isSelected: self.elasticConstraints,
-                fn: function(){
+                fn: function () {
                     self.elasticConstraints = !self.elasticConstraints;
                     self.invalidateConstraints();
                     return self.elasticConstraints;
@@ -621,7 +626,7 @@ module stovis {
                 max: 10,
                 min: 0.25,
                 step: 0.25,
-                fn: function(){
+                fn: function () {
                     self.frequency = this.value;
                     self.htmlControls.updateSlider("frequencySlider", self.frequency);
                     if (self.elasticConstraints) {
@@ -635,7 +640,7 @@ module stovis {
                 max: 2,
                 min: 0,
                 step: 0.25,
-                fn: function(){
+                fn: function () {
                     self.damping = this.value;
                     self.htmlControls.updateSlider("dampingSlider", self.damping);
                     if (self.elasticConstraints) {
@@ -647,256 +652,282 @@ module stovis {
         }
 
 
+        visStore: Rdfstore.Store;
+
         constructor(container: HTMLElement) {
             console.log("Beginning of Editor constructor... ");
 
             this.debugEnabled = false;
-            this.contactsEnabled = false;
-            this.framesPerSecond = 60;
             this.debugMessagesPerSecond = 1;
 
 
-            // physics2d_constraints_canvas_debug  ******************************
-
-            TurbulenzEngine.onload = () => {
-                console.log("sto - Beginning of our redefined TurbulenzEngine.onload");
-
-                //==========================================================================
-                // HTML Controls
-                //==========================================================================
 
 
-                //==========================================================================
-                // Turbulenz Initialization
-                //==========================================================================
-                this.graphicsDevice = TurbulenzEngine.createGraphicsDevice({});
-                console.log("this.graphicsDevice", this.graphicsDevice);
-                this.mathDevice = TurbulenzEngine.createMathDevice({});
-                this.requestHandler = RequestHandler.create({});
-                console.log("RequestHandler = ", this.requestHandler);
+            rdfstore.create((store)=> {
+                this.visStore = store;
 
-                this.fontManager = FontManager.create(this.graphicsDevice, this.requestHandler);
-                this.shaderManager = ShaderManager.create(this.graphicsDevice, this.requestHandler);
+                store.rdf.setPrefix("ex", "http://example.org/people/");
+                store.rdf.setPrefix("foaf", "http://xmlns.com/foaf/0.1/");
+
+                var graph = store.rdf.createGraph();
+
+                graph.add(store.rdf.createTriple(store.rdf.createNamedNode(store.rdf.resolve("ex:Alice")),
+                    store.rdf.createNamedNode(store.rdf.resolve("foaf:name")),
+                    store.rdf.createLiteral("alice")));
+
+                console.log("graph = ", graph);
+
+                var triples = graph.match(null, store.rdf.createNamedNode(store.rdf.resolve("foaf:name")), null).toArray();
+
+                console.log("triples = ", triples);
+
+                console.log("rdf api worked? " + (triples[0].object.valueOf() === 'alice'));
+
+                // ************       Graphics stuff    *************************
 
 
-                var sessionCreated = ()=>{
-                    console.log("Beginning of sessionCreated()");
-                    console.log("this.requestHandler", this.requestHandler);
-                    console.log("this.gameSession", this.gameSession);
+                this.contactsEnabled = false;
+                this.framesPerSecond = 60;
 
-                    TurbulenzServices.createMappingTable(this.requestHandler, this.gameSession, (mappingTable) => {
-                        console.log("callback of TurbulenzServices.createMappingTable");
-                        var urlMapping = mappingTable.urlMapping;
-                        var assetPrefix = mappingTable.assetPrefix;
-                        this.shaderManager.setPathRemapping(urlMapping, assetPrefix);
-                        this.fontManager.setPathRemapping(urlMapping, assetPrefix);
-                        this.fontManager.load('fonts/hero.fnt', (fontObject) => {
-                            this.font = fontObject;
+                TurbulenzEngine.onload = () => {
+                    console.log("sto - Beginning of our redefined TurbulenzEngine.onload");
+
+                    //==========================================================================
+                    // HTML Controls
+                    //==========================================================================
+
+
+                    //==========================================================================
+                    // Turbulenz Initialization
+                    //==========================================================================
+                    this.graphicsDevice = TurbulenzEngine.createGraphicsDevice({});
+                    console.log("this.graphicsDevice", this.graphicsDevice);
+                    this.mathDevice = TurbulenzEngine.createMathDevice({});
+                    this.requestHandler = RequestHandler.create({});
+                    console.log("RequestHandler = ", this.requestHandler);
+
+                    this.fontManager = FontManager.create(this.graphicsDevice, this.requestHandler);
+                    this.shaderManager = ShaderManager.create(this.graphicsDevice, this.requestHandler);
+
+
+                    var sessionCreated = () => {
+                        console.log("Beginning of sessionCreated()");
+                        console.log("this.requestHandler", this.requestHandler);
+                        console.log("this.gameSession", this.gameSession);
+
+                        TurbulenzServices.createMappingTable(this.requestHandler, this.gameSession, (mappingTable) => {
+                            console.log("callback of TurbulenzServices.createMappingTable");
+                            var urlMapping = mappingTable.urlMapping;
+                            var assetPrefix = mappingTable.assetPrefix;
+                            this.shaderManager.setPathRemapping(urlMapping, assetPrefix);
+                            this.fontManager.setPathRemapping(urlMapping, assetPrefix);
+                            this.fontManager.load('fonts/hero.fnt', (fontObject) => {
+                                this.font = fontObject;
+                            });
+                            this.shaderManager.load('shaders/font.cgfx', (shaderObject) => {
+                                this.shader = shaderObject;
+                            });
                         });
-                        this.shaderManager.load('shaders/font.cgfx', (shaderObject) => {
-                            this.shader = shaderObject;
-                        });
-                    });
-                }
+                    }
 
 
                 console.log("Creating gameSession");
-                console.log("this.requestHandler = ", this.requestHandler);
-                this.gameSession = TurbulenzServices.createGameSession(this.requestHandler, sessionCreated);
+                    console.log("this.requestHandler = ", this.requestHandler);
+                    this.gameSession = TurbulenzServices.createGameSession(this.requestHandler, sessionCreated);
 
-                //==========================================================================
-                // Physics2D/Draw2D (Use Draw2D to define viewport scalings)
-                //==========================================================================
-                // set up.
-                console.log("Creating phys2D");
-                this.phys2D = Physics2DDevice.create();
+                    //==========================================================================
+                    // Physics2D/Draw2D (Use Draw2D to define viewport scalings)
+                    //==========================================================================
+                    // set up.
+                    console.log("Creating phys2D");
+                    this.phys2D = Physics2DDevice.create();
 
-                // size of physics stage.
-                this.stageWidth = 40;
-                this.stageHeight = 20;
+                    // size of physics stage.
+                    this.stageWidth = 40;
+                    this.stageHeight = 20;
 
-                console.log("Creating draw2D");
-                this.draw2D = Draw2D.create({
-                    graphicsDevice: this.graphicsDevice
-                });
-                this.debug = Physics2DDebugDraw.create({
-                    graphicsDevice: this.graphicsDevice
-                });
+                    console.log("Creating draw2D");
+                    this.draw2D = Draw2D.create({
+                        graphicsDevice: this.graphicsDevice
+                    });
+                    this.debug = Physics2DDebugDraw.create({
+                        graphicsDevice: this.graphicsDevice
+                    });
 
-                // Configure draw2D viewport to the physics stage.
-                // As well as the physics2D debug-draw viewport.
-                this.draw2D.configure({
-                    viewportRectangle: [0, 0, this.stageWidth, this.stageHeight],
-                    scaleMode: 'scale'
-                });
-                this.debug.setPhysics2DViewport([0, 0, this.stageWidth, this.stageHeight]);
+                    // Configure draw2D viewport to the physics stage.
+                    // As well as the physics2D debug-draw viewport.
+                    this.draw2D.configure({
+                        viewportRectangle: [0, 0, this.stageWidth, this.stageHeight],
+                        scaleMode: 'scale'
+                    });
+                    this.debug.setPhysics2DViewport([0, 0, this.stageWidth, this.stageHeight]);
 
-                this.world = this.phys2D.createWorld({
-                    gravity: [0, 20]
-                });
+                    this.world = this.phys2D.createWorld({
+                        gravity: [0, 20]
+                    });
 
-                // Create a static body at (0, 0) with no rotation
-                // which we add to the world to use as the first body
-                // in hand constraint. We set anchor for this body
-                // as the cursor position in physics coordinates.
-                this.staticReferenceBody = this.phys2D.createRigidBody({
-                    type: 'static'
-                });
-                this.world.addRigidBody(this.staticReferenceBody);
-                this.handConstraint = null;
+                    // Create a static body at (0, 0) with no rotation
+                    // which we add to the world to use as the first body
+                    // in hand constraint. We set anchor for this body
+                    // as the cursor position in physics coordinates.
+                    this.staticReferenceBody = this.phys2D.createRigidBody({
+                        type: 'static'
+                    });
+                    this.world.addRigidBody(this.staticReferenceBody);
+                    this.handConstraint = null;
 
-                this.reset();
+                    this.reset();
 
 
-                //==========================================================================
-                // Mouse/Keyboard controls
-                //==========================================================================
-                this.inputDevice = TurbulenzEngine.createInputDevice({});
-                this.keyCodes = this.inputDevice.keyCodes;
-                this.mouseCodes = this.inputDevice.mouseCodes;
+                    //==========================================================================
+                    // Mouse/Keyboard controls
+                    //==========================================================================
+                    this.inputDevice = TurbulenzEngine.createInputDevice({});
+                    this.keyCodes = this.inputDevice.keyCodes;
+                    this.mouseCodes = this.inputDevice.mouseCodes;
 
-                this.mouseX = 0;
-                this.mouseY = 0;
-                var onMouseOver = (x, y) => {
-                    this.mouseX = x;
-                    this.mouseY = y;
-                };
-                this.inputDevice.addEventListener('mouseover', onMouseOver);
+                    this.mouseX = 0;
+                    this.mouseY = 0;
+                    var onMouseOver = (x, y) => {
+                        this.mouseX = x;
+                        this.mouseY = y;
+                    };
+                    this.inputDevice.addEventListener('mouseover', onMouseOver);
 
-                var onKeyUp = (keynum) => {
-                    if (keynum === this.keyCodes.R) {
-                        this.reset();
-                    }
-                };
-                this.inputDevice.addEventListener('keyup', onKeyUp);
+                    var onKeyUp = (keynum) => {
+                        if (keynum === this.keyCodes.R) {
+                            this.reset();
+                        }
+                    };
+                    this.inputDevice.addEventListener('keyup', onKeyUp);
 
-                var onMouseDown = (code, x, y) => {
-                    this.mouseX = x;
-                    this.mouseY = y;
+                    var onMouseDown = (code, x, y) => {
+                        this.mouseX = x;
+                        this.mouseY = y;
 
-                    if (this.handConstraint) {
-                        return;
-                    }
+                        if (this.handConstraint) {
+                            return;
+                        }
 
-                    var point = this.draw2D.viewportMap(x, y);
-                    var body;
-                    if (code === this.mouseCodes.BUTTON_0) {
-                        var bodies = [];
-                        var numBodies = this.world.bodyPointQuery(point, bodies);
-                        var i;
-                        for (i = 0; i < numBodies; i += 1) {
-                            body = bodies[i];
-                            if (body.isDynamic()) {
-                                this.handConstraint = this.phys2D.createPointConstraint({
-                                    bodyA: this.staticReferenceBody,
-                                    bodyB: body,
-                                    anchorA: point,
-                                    anchorB: body.transformWorldPointToLocal(point),
-                                    stiff: false,
-                                    maxForce: 1e5
-                                });
-                                this.world.addConstraint(this.handConstraint);
+                        var point = this.draw2D.viewportMap(x, y);
+                        var body;
+                        if (code === this.mouseCodes.BUTTON_0) {
+                            var bodies = [];
+                            var numBodies = this.world.bodyPointQuery(point, bodies);
+                            var i;
+                            for (i = 0; i < numBodies; i += 1) {
+                                body = bodies[i];
+                                if (body.isDynamic()) {
+                                    this.handConstraint = this.phys2D.createPointConstraint({
+                                        bodyA: this.staticReferenceBody,
+                                        bodyB: body,
+                                        anchorA: point,
+                                        anchorB: body.transformWorldPointToLocal(point),
+                                        stiff: false,
+                                        maxForce: 1e5
+                                    });
+                                    this.world.addConstraint(this.handConstraint);
+                                }
                             }
                         }
+                    };
+                    this.inputDevice.addEventListener('mousedown', onMouseDown);
+
+                    var onMouseLeaveUp = () => {
+                        if (this.handConstraint) {
+                            this.world.removeConstraint(this.handConstraint);
+                            this.handConstraint = null;
+                        }
+                    };
+                    this.inputDevice.addEventListener('mouseleave', onMouseLeaveUp);
+                    this.inputDevice.addEventListener('mouseup', onMouseLeaveUp);
+
+                    //==========================================================================
+                    // Main loop.
+                    //==========================================================================
+                    this.realTime = 0;
+                    this.prevTime = TurbulenzEngine.time;
+
+
+
+
+                    var intervalID = 0;
+
+
+                    var loadingLoop = () => {
+                        if (this.font && this.shader) {
+                            this.fontTechnique = this.shader.getTechnique('font');
+                            this.fontTechniqueParameters = this.graphicsDevice.createTechniqueParameters({
+                                clipSpace: this.mathDevice.v4BuildZero(),
+                                alphaRef: 0.01,
+                                color: this.mathDevice.v4BuildOne()
+                            });
+
+                            TurbulenzEngine.clearInterval(intervalID);
+                            intervalID = TurbulenzEngine.setInterval(this.mainLoop.bind(this), 1000 / 60);
+                        }
                     }
-                };
-                this.inputDevice.addEventListener('mousedown', onMouseDown);
-
-                var onMouseLeaveUp = () => {
-                    if (this.handConstraint) {
-                        this.world.removeConstraint(this.handConstraint);
-                        this.handConstraint = null;
-                    }
-                };
-                this.inputDevice.addEventListener('mouseleave', onMouseLeaveUp);
-                this.inputDevice.addEventListener('mouseup', onMouseLeaveUp);
-
-                //==========================================================================
-                // Main loop.
-                //==========================================================================
-                this.realTime = 0;
-                this.prevTime = TurbulenzEngine.time;
-
-
-
-
-                var intervalID = 0;
-
-
-                var loadingLoop = () => {
-                    if (this.font && this.shader) {
-                        this.fontTechnique = this.shader.getTechnique('font');
-                        this.fontTechniqueParameters = this.graphicsDevice.createTechniqueParameters({
-                            clipSpace: this.mathDevice.v4BuildZero(),
-                            alphaRef: 0.01,
-                            color: this.mathDevice.v4BuildOne()
-                        });
-
-                        TurbulenzEngine.clearInterval(intervalID);
-                        intervalID = TurbulenzEngine.setInterval(this.mainLoop.bind(this), 1000 / 60);
-                    }
-                }
 
             intervalID = TurbulenzEngine.setInterval(loadingLoop, 100);
 
-                //==========================================================================
+                    //==========================================================================
 
 
-                this.loadHtmlControls();
+                    this.loadHtmlControls();
 
-                // Create a scene destroy callback to run when the window is closed
-                TurbulenzEngine.onunload = () => {
-                    if (intervalID) {
-                        TurbulenzEngine.clearInterval(intervalID);
-                    }
+                    // Create a scene destroy callback to run when the window is closed
+                    TurbulenzEngine.onunload = () => {
+                        if (intervalID) {
+                            TurbulenzEngine.clearInterval(intervalID);
+                        }
 
-                    if (this.gameSession) {
-                        this.gameSession.destroy();
-                        this.gameSession = null;
-                    }
+                        if (this.gameSession) {
+                            this.gameSession.destroy();
+                            this.gameSession = null;
+                        }
+                    };
                 };
-            };
 
-            // Engine startup
-            //sto window.onload = function () {
-            var appEntry = TurbulenzEngine.onload;
-            var appShutdown = TurbulenzEngine.onunload;
-            if (!appEntry) {
-                window.alert("TurbulenzEngine.onload has not been set");
-                return;
-            }
-
-            var canvas: HTMLCanvasElement = <HTMLCanvasElement> document.getElementById('turbulenz_game_engine_canvas');
-
-            var startCanvas = () => {
-                if (canvas.getContext && canvasSupported) {
-                    TurbulenzEngine = WebGLTurbulenzEngine.create({
-                        canvas: canvas,
-                        fillParent: true
-                    });
-
-                    if (!TurbulenzEngine) {
-                        window.alert("Failed to init TurbulenzEngine (canvas)");
-                        return;
-                    }
-
-                    TurbulenzEngine.onload = appEntry;
-                    TurbulenzEngine.onunload = appShutdown;
-                    appEntry();
+                // Engine startup
+                //sto window.onload = function () {
+                var appEntry = TurbulenzEngine.onload;
+                var appShutdown = TurbulenzEngine.onunload;
+                if (!appEntry) {
+                    window.alert("TurbulenzEngine.onload has not been set");
+                    return;
                 }
-            }
+
+                var canvas: HTMLCanvasElement = <HTMLCanvasElement> document.getElementById('turbulenz_game_engine_canvas');
+
+                var startCanvas = () => {
+                    if (canvas.getContext && canvasSupported) {
+                        TurbulenzEngine = WebGLTurbulenzEngine.create({
+                            canvas: canvas,
+                            fillParent: true
+                        });
+
+                        if (!TurbulenzEngine) {
+                            window.alert("Failed to init TurbulenzEngine (canvas)");
+                            return;
+                        }
+
+                        TurbulenzEngine.onload = appEntry;
+                        TurbulenzEngine.onunload = appShutdown;
+                        appEntry();
+                    }
+                }
 
             var previousOnBeforeUnload = window.onbeforeunload;
-            window.onbeforeunload = function () {
-                if (TurbulenzEngine.onunload) {
-                    TurbulenzEngine.onunload.call(this);
-                }
-            };  // window.beforeunload
+                window.onbeforeunload = function () {
+                    if (TurbulenzEngine.onunload) {
+                        TurbulenzEngine.onunload.call(this);
+                    }
+                };  // window.beforeunload
 
-            startCanvas();
-            //sto };  // window.onload()
+                startCanvas();
 
-            // end physics2d_constraints_canvas_debug  *******************************
+            })
+
 
 
 

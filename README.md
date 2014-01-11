@@ -10,7 +10,7 @@ Stochastic Computer Algebra System
 
 **Documentation**: see [the wiki](https://github.com/DavidLeoni/StoCAS/wiki)
 
-**License**: AGPL v3.0
+**License**: MIT
 
 
 #### Credits

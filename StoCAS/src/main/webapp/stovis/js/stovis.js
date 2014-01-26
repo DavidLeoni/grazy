@@ -6,6 +6,7 @@ var stovis;
     stovis.DEFAULT_BACKGROUND_COLOR = "#2e2e2e";
     stovis.DEFAULT_FILL_COLOR = [1, 1, 1, 1];
     stovis.DEFAULT_STROKE_COLOR = "#ff7a7a";
+    stovis.DEFAULT_RADIUS = 1.0;
 
     /** max field size in pixel */
     stovis.MAX_FIELD_LENGTH = 20000;
@@ -20,14 +21,38 @@ var stovis;
     })();
 
     var Node = (function () {
-        function Node(rdfNode, body) {
+        function Node(id, rdfNode, body) {
+            this.id = id;
             this.rdfNode = rdfNode;
             this.body = body;
             this.pin = null;
         }
+        Object.defineProperty(Node.prototype, "radius", {
+            get: function () {
+                var circle = this.body.shapes[0];
+
+                // assuming a circle body - these constants are awful! Don't they have a CircleShape class??
+                var data = circle._data;
+                return data[(6)];
+            },
+            enumerable: true,
+            configurable: true
+        });
         return Node;
     })();
     stovis.Node = Node;
+
+    var Relation = (function () {
+        function Relation(id, nodeA, nodeB, constraint, relationUrl) {
+            this.id = id;
+            this.nodeA = nodeA;
+            this.nodeB = nodeB;
+            this.constraint = constraint;
+            this.relationUrl = relationUrl;
+        }
+        return Relation;
+    })();
+    stovis.Relation = Relation;
 
     var Editor = (function () {
         function Editor(container) {
@@ -45,6 +70,9 @@ var stovis;
                 _this.visStore = vs;
                 _this.visGraph = vs.rdf.createGraph();
                 _this.nodeMap = {};
+                _this.relationMap = {};
+                _this.nodeIdCounter = 0;
+                _this.relationIdCounter = 0;
 
                 vs.rdf.setPrefix("ex", "http://example.org/people/");
                 vs.rdf.setPrefix("foaf", "http://xmlns.com/foaf/0.1/");
@@ -326,31 +354,39 @@ var stovis;
         /**
         
         */
-        Editor.prototype.addRelation = function (nodeA, relation, nodeB, distance) {
-            this.visStore.execute('INSERT DATA {  <' + nodeA.rdfNode.nominalValue + '> <' + relation + '> <' + nodeB.rdfNode.nominalValue + '> }');
+        Editor.prototype.addRelation = function (nodeA, predicateUrl, nodeB) {
+            this.visStore.execute('INSERT DATA {  <' + nodeA.rdfNode.nominalValue + '> <' + predicateUrl + '> <' + nodeB.rdfNode.nominalValue + '> }');
 
-            var worldAnchor = [15, 5];
             var bodyA = nodeA.body;
             var bodyB = nodeB.body;
-            var weld = this.phys2D.createWeldConstraint({
+
+            var loBound = nodeA.radius + nodeB.radius + 2.0 * stovis.DEFAULT_RADIUS;
+            var upBound = loBound + 2.0 * stovis.DEFAULT_RADIUS;
+
+            var distanceConstraint = this.phys2D.createDistanceConstraint({
                 bodyA: bodyA,
                 bodyB: bodyB,
-                anchorA: bodyA.transformWorldPointToLocal(worldAnchor),
-                anchorB: bodyB.transformWorldPointToLocal(worldAnchor),
-                phase: 0,
+                anchorA: [0.0, 0.0],
+                anchorB: [0.0, 0.0],
+                lowerBound: loBound,
+                upperBound: upBound,
                 stiff: (!this.elasticConstraints),
                 frequency: this.frequency,
                 damping: this.damping
             });
-            this.world.addConstraint(weld);
+
+            this.world.addConstraint(distanceConstraint);
+            this.relationIdCounter += 1;
+            var relation = new Relation(this.relationIdCounter, nodeA, nodeB, distanceConstraint, predicateUrl);
+            this.relationMap[relation.id] = relation;
+            return relation;
         };
 
         Editor.prototype.addNode = function (x, y, radius, iri) {
             var vs = this.visStore;
             var rdfNode = vs.rdf.createNamedNode(iri);
-            var node = new Node(rdfNode, null);
 
-            this.nodeMap[vs.rdf.terms.resolve(iri)] = node;
+            var node = new Node(null, rdfNode, null);
 
             vs.execute('INSERT DATA {  <' + iri + '> <rdfs:label> "' + vs.rdf.terms.shrink(iri) + '" }');
 
@@ -365,6 +401,10 @@ var stovis;
             });
             node.body = body;
             this.world.addRigidBody(body);
+            this.nodeIdCounter += 1;
+            node.id = this.nodeIdCounter;
+            this.nodeMap[this.nodeIdCounter] = node;
+
             return node;
         };
 
@@ -424,12 +464,15 @@ var stovis;
 
             // ------------------------------------
             // tree layout
-            var nodeC = this.addNode(2, 2, 1, "C");
-            var nodeD = this.addNode(8, 2, 1, "D");
-            this.addRelation(nodeC, "myrel", nodeD, 4);
+            var nodeC = this.addNode(2, 2, stovis.DEFAULT_RADIUS, "C");
+            var nodeD = this.addNode(8, 2, stovis.DEFAULT_RADIUS, "D");
 
-            var nodeA = this.addNode(3.3, 5, 1, "A");
-            var nodeB = this.addNode(6.6, 5, 1, "B");
+            var nodeA = this.addNode(3.3, 5, stovis.DEFAULT_RADIUS, "A");
+            var nodeB = this.addNode(6.6, 5, stovis.DEFAULT_RADIUS, "B");
+
+            this.addRelation(nodeA, "myrel", nodeB);
+            this.addRelation(nodeA, "myrel", nodeC);
+            this.addRelation(nodeC, "myrel", nodeD);
 
             this.visStore.execute("SELECT * { ?s ?p ?o }", function (success, results) {
                 console.log("success: ", success);

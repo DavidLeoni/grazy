@@ -40,6 +40,7 @@ module stovis {
     export var DEFAULT_BACKGROUND_COLOR = "#2e2e2e";
     export var DEFAULT_FILL_COLOR = [1, 1, 1, 1]; // "#ffbaba";
     export var DEFAULT_STROKE_COLOR = "#ff7a7a";
+    export var DEFAULT_RADIUS = 1.0;
     /** max field size in pixel */
     export var MAX_FIELD_LENGTH = 20000;
 
@@ -51,13 +52,36 @@ module stovis {
     }
 
     export class Node {
+        id: number;
         rdfNode: Rdfstore.RDFNode;
         body: Physics2DRigidBody;
         pin: Physics2DConstraint;
-        constructor(rdfNode: Rdfstore.RDFNode, body: Physics2DRigidBody) {
+        constructor(id: number, rdfNode: Rdfstore.RDFNode, body: Physics2DRigidBody) {
+            this.id = id;
             this.rdfNode = rdfNode;
             this.body = body;
             this.pin = null;
+        }
+        get radius() : number {
+            var circle = this.body.shapes[0];
+            // assuming a circle body - these constants are awful! Don't they have a CircleShape class??           
+            var data = circle._data;
+            return data[(/*CIRCLE_RADIUS*/6)];            
+        }
+    }
+
+    export class Relation {
+        id: number;
+        nodeA: Node;
+        nodeB: Node;
+        constraint: Physics2DConstraint;
+        relationUrl: string;
+        constructor(id: number, nodeA: Node, nodeB: Node, constraint: Physics2DConstraint, relationUrl: string) {
+            this.id = id;
+            this.nodeA = nodeA;
+            this.nodeB = nodeB;
+            this.constraint = constraint;
+            this.relationUrl = relationUrl;
         }
     }
 
@@ -151,42 +175,59 @@ module stovis {
 
         }
 
-        nodeMap: { [iri: string]: Node; };
+        /**
+        Yeah, let's make some discouraged-yet-possible weird number indexed objects. See http://mathiasbynens.be/notes/javascript-properties
+        */
+        nodeMap: { [id: number]: Node; };
+        relationMap: { [id: number]: Relation; };
+
+
 
         /**
             
         */
-        addRelation(nodeA: Node, relation: string, nodeB: Node, distance : number) {
+        addRelation(nodeA: Node, predicateUrl: string, nodeB: Node) : Relation {
 
-            this.visStore.execute('INSERT DATA {  <' + nodeA.rdfNode.nominalValue + '> <' + relation + '> <' + nodeB.rdfNode.nominalValue + '> }');   
+            this.visStore.execute('INSERT DATA {  <' + nodeA.rdfNode.nominalValue + '> <' + predicateUrl + '> <' + nodeB.rdfNode.nominalValue + '> }');   
 
-            var worldAnchor = [15, 5];
             var bodyA = nodeA.body;
             var bodyB = nodeB.body;
-            var weld = this.phys2D.createWeldConstraint({
+
+            var loBound = nodeA.radius + nodeB.radius + 2.0 * DEFAULT_RADIUS;
+            var upBound = loBound + 2.0 * DEFAULT_RADIUS;
+
+
+            var distanceConstraint = this.phys2D.createDistanceConstraint({
                 bodyA: bodyA,
                 bodyB: bodyB,
-                anchorA: bodyA.transformWorldPointToLocal(worldAnchor),
-                anchorB: bodyB.transformWorldPointToLocal(worldAnchor),
-                phase: 0,
+                anchorA: [0.0, 0.0],
+                anchorB: [0.0, 0.0],
+                lowerBound: loBound,
+                upperBound: upBound,
                 stiff: (!this.elasticConstraints),
                 frequency: this.frequency,
                 damping: this.damping
             });
-            this.world.addConstraint(weld);                
+
+            this.world.addConstraint(distanceConstraint);   
+            this.relationIdCounter += 1;             
+            var relation = new Relation(this.relationIdCounter, nodeA, nodeB, distanceConstraint, predicateUrl);
+            this.relationMap[relation.id] = relation;
+            return relation;
         }
 
         addNode(x: number, y: number, radius: number, iri: string) : Node {
             var vs = this.visStore;            
             var rdfNode = vs.rdf.createNamedNode(iri);
-            var node = new Node(rdfNode, null);
+  
+            var node = new Node(null, rdfNode, null);
 
-            this.nodeMap[vs.rdf.terms.resolve(iri)] = node;
+
                         
             vs.execute('INSERT DATA {  <' + iri + '> <rdfs:label> "' + vs.rdf.terms.shrink(iri) +'" }');            
-                                    
 
-            var body = this.phys2D.createRigidBody({
+
+            var body = this.phys2D.createRigidBody({                
                 shapes: [
                     this.phys2D.createCircleShape({
                         radius: radius
@@ -196,7 +237,11 @@ module stovis {
                 userData: node
             });
             node.body = body;
-            this.world.addRigidBody(body);           
+            this.world.addRigidBody(body);    
+            this.nodeIdCounter += 1;
+            node.id = this.nodeIdCounter;
+            this.nodeMap[this.nodeIdCounter] = node;
+
             return node;
         }
 
@@ -260,13 +305,17 @@ module stovis {
             // ------------------------------------
             // tree layout
 
-            var nodeC = this.addNode(2, 2, 1, "C");
-            var nodeD = this.addNode(8, 2, 1, "D");
-            this.addRelation(nodeC, "myrel", nodeD, 4);
+            var nodeC = this.addNode(2, 2, DEFAULT_RADIUS, "C");
+            var nodeD = this.addNode(8, 2, DEFAULT_RADIUS, "D");
 
-            var nodeA =  this.addNode(3.3, 5, 1, "A");
-            var nodeB = this.addNode(6.6, 5, 1, "B");
+            var nodeA = this.addNode(3.3, 5, DEFAULT_RADIUS, "A");
+            var nodeB = this.addNode(6.6, 5, DEFAULT_RADIUS, "B");
             
+            this.addRelation(nodeA, "myrel", nodeB);
+            this.addRelation(nodeA, "myrel", nodeC);
+            this.addRelation(nodeC, "myrel", nodeD);
+
+
              this.visStore.execute("SELECT * { ?s ?p ?o }", function (success, results) {
                 console.log("success: ", success);
                 console.log("results: ", results);
@@ -276,17 +325,7 @@ module stovis {
             console.log("visStore2 = ", this.visStore);
             
 
-            worldAnchor = [5, 5];
-            var pointConstraint = this.phys2D.createPointConstraint({
-                bodyA: nodeA.body,
-                bodyB: nodeB.body,
-                anchorA: nodeA.body.transformWorldPointToLocal(worldAnchor),
-                anchorB: nodeB.body.transformWorldPointToLocal(worldAnchor),
-                stiff: (!this.elasticConstraints),
-                frequency: this.frequency,
-                damping: this.damping
-            });
-            this.world.addConstraint(pointConstraint);
+
 
             // ------------------------------------
             // Weld Constraint
@@ -561,7 +600,10 @@ module stovis {
 
         visStore: Rdfstore.Store;
         visGraph: any;
+
         
+        nodeIdCounter: number; 
+        relationIdCounter: number;
 
         constructor(container: HTMLElement) {
             console.log("Beginning of Stovis Editor constructor... ");
@@ -576,6 +618,9 @@ module stovis {
                 this.visStore = vs;
                 this.visGraph = vs.rdf.createGraph();
                 this.nodeMap = {};
+                this.relationMap = {};
+                this.nodeIdCounter = 0;
+                this.relationIdCounter = 0;
 
                 vs.rdf.setPrefix("ex", "http://example.org/people/");
                 vs.rdf.setPrefix("foaf", "http://xmlns.com/foaf/0.1/");

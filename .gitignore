@@ -36,7 +36,6 @@ nb-configuration.xml
 ##### ECLIPSE 
 
 *.pydevproject
-.project
 .metadata
 bin/**
 tmp/**

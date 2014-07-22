@@ -1,3 +1,8 @@
+console.log("ciao");
+ 
+ li mortacci tua dc
+ 
+
 // Interface
 interface IPoint {
     getDist(): number;

@@ -1,6 +1,6 @@
 // Copyright (c) 2010-2011 Turbulenz Limited
 // stovis don't know whhy this reference to jquery was not included
-/// <reference path="../../stocore/js/libs/jquery/jquery.d.ts" />
+/// <reference path="../../../stolang/js/com.jquery/jquery.d.ts" />
 
 interface Window
 {
@@ -287,7 +287,7 @@ class HTMLControls
                     return;
                 }
                 var slider : any = window.$("#" + id);
-                var input = window.$("#" + id + "input");
+                var input : any = window.$("#" + id + "input");
                 if (!slider || !input)
                 {
                     return;
@@ -344,7 +344,7 @@ class HTMLControls
                     slide: createSliderCallback(id)
                 });
 
-                input.val(<number><any>slider.slider("value"));
+                input.val(slider.slider("value"));
                 input.change(createInputCallback(control, id));
             }
         }

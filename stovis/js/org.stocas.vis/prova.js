@@ -1,3 +1,5 @@
+console.log("ciao");
+
 
 // Module
 var Shapes;

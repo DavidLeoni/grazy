@@ -21,4 +21,3 @@ window.onload = function () {
     var el = document.getElementById('content');
     stodev = StoDev.getSingleton(el);
 };
-//# sourceMappingURL=stodev.js.map

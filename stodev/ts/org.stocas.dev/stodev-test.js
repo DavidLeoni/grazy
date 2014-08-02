@@ -14,4 +14,3 @@ window.onload = function () {
     var greeter = new Greeter(el);
     greeter.start();
 };
-//# sourceMappingURL=stodev-test.js.map

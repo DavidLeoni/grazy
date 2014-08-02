@@ -1,4 +1,4 @@
-/// <reference path="../../../stovis/test/js/physics-2d-constraints-test.ts" />
+/// <reference path="../../../stovis/ts/org.stocas.vis/physics-2d-constraints-test.ts" />
 
 
 

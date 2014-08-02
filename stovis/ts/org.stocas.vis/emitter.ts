@@ -3,6 +3,19 @@
 /*global Geometry: false*/
 /*global GeometryInstance: false*/
 
+/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/turbulenz.d.ts" />
+/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/servicedatatypes.d.ts" />
+/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/services.d.ts" />
+/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/aabbtree.d.ts" />
+/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/jsengine_base.d.ts" />
+/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/jsengine.d.ts" />
+/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/fontmanager.d.ts" />
+/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/utilities.d.ts" />
+
+/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/tzdraw2d.d.ts" />
+/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/physics2d.d.ts" />
+/// <reference path="htmlcontrols.ts" />
+
 interface Particle
 {
     velocity    : any; // v3

@@ -1,4 +1,5 @@
-/// <reference path="../../stovis/js/stovis.ts" />
+/// <reference path="../../../stovis/ts/org.stocas.vis/stovis.ts" />
+
 
 
 declare var stodev: StoDev;

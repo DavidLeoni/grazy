@@ -6,9 +6,18 @@
 	</projects>
 	<buildSpec>
 		<buildCommand>
+			<name></name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+		<buildCommand>
+			<name>com.axmor.eclipse.typescript.builder.typescriptBuilder</name>
+			<arguments>
+			</arguments>
 		</buildCommand>
 	</buildSpec>
 	<natures>
+		<nature>com.axmor.eclipse.typescript.builder.typescriptNature</nature>
 	</natures>
 	<linkedResources>
 		<link>
@@ -19,7 +28,7 @@
 		<link>
 			<name>std-lib/lib.d.ts</name>
 			<type>1</type>
-			<location>C:/Users/david_2/Da/bin/winbin/eclipse-kepler-sdk-4/plugins/com.axmor.eclipse.typescript.core_1.5.1.201405141411/lib/bridge/ts_1.0.0/lib.d.ts</location>
+			<location>C:/Users/david_2/Da/bin/winbin/eclipse-standard/plugins/com.axmor.eclipse.typescript.core_1.5.1.201405141411/lib/bridge/ts_1.0.0/lib.d.ts</location>
 		</link>
 	</linkedResources>
 </projectDescription>

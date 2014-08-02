@@ -35,6 +35,12 @@ var stovis;
         return ExperimentalElem;
     })();
 
+    var JsonLd = (function () {
+        function JsonLd() {
+        }
+        return JsonLd;
+    })();
+
     var Node = (function () {
         function Node(id, rdfNode, body) {
             this.id = id;
@@ -367,6 +373,13 @@ var stovis;
         };
 
         /**
+        For each key in the object, a new node is created. Nodes IRI must be present in "@id" field
+        @return Returns the root node.
+        */
+        Editor.prototype.addTree = function (JsonLd) {
+        };
+
+        /**
         
         */
         Editor.prototype.addRelation = function (nodeA, predicateUrl, nodeB) {
@@ -626,7 +639,7 @@ var stovis;
 
             this.debug.drawRigidBody(node.body);
             if (this.world.timeStamp % (Math.floor(this.framesPerSecond / this.debugMessagesPerSecond)) === 0) {
-                console.log("pos[0] : ", pos[0], "pos[1] : ", pos[1], "radius : ", radius);
+                //console.log("pos[0] : ", pos[0], "pos[1] : ", pos[1], "radius : ", radius);
             }
 
             this.drawCenteredText(pos[0], pos[1], node.rdfNode.nominalValue, radius, radius);

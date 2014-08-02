@@ -3,9 +3,6 @@
 /// <reference path="../../../stolang/ts/org.stocas.lang/stolang.ts" />
 
  
-
-
-
 /*global TurbulenzEngine: true */
 /*global TurbulenzServices: false */
 /*global RequestHandler: false */
@@ -53,6 +50,10 @@ module stovis {
     class ExperimentalElem {
 
     }
+    
+    class JsonLd {
+			"@id" : string;			
+	}
 
     export class Node {
         id: number;
@@ -183,8 +184,19 @@ module stovis {
         */
         nodeMap: { [id: number]: Node; };
         relationMap: { [id: number]: Relation; };
-
-
+		
+		
+		
+		/**
+			 For each key in the object, a new node is created. Nodes IRI must be present in "@id" field
+			 @return Returns the root node.  
+		*/
+		
+		// fff
+		
+		/* addTree(tree : JsonLd) : Node{
+		
+		}*/
 
         /**
             
@@ -460,7 +472,7 @@ module stovis {
 
             this.debug.drawRigidBody(node.body);
             if (this.world.timeStamp % (Math.floor(this.framesPerSecond / this.debugMessagesPerSecond)) === 0) {
-                console.log("pos[0] : ", pos[0], "pos[1] : ", pos[1], "radius : ", radius);
+                //console.log("pos[0] : ", pos[0], "pos[1] : ", pos[1], "radius : ", radius);                
             }
 
 

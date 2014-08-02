@@ -1,3 +1,6 @@
+// sto added these
+/// <reference path="utilities.d.ts" />
+
 interface CachedAsset {
     cacheHit: number;
     asset: any;

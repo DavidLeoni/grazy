@@ -51,11 +51,11 @@ module stovis {
 
     }
     
-    class JsonLd {
+    export class JsonLd {
 			"@id" : string;			
 	}
 
-    export class Node {
+    export class VisNode {
         id: number;
         rdfNode: Rdfstore.RDFNode;
         body: Physics2DRigidBody;
@@ -76,11 +76,11 @@ module stovis {
 
     export class Relation {
         id: number;
-        nodeA: Node;
-        nodeB: Node;
+        nodeA: VisNode;
+        nodeB: VisNode;
         constraint: Physics2DConstraint;
         relationUrl: string;
-        constructor(id: number, nodeA: Node, nodeB: Node, constraint: Physics2DConstraint, relationUrl: string) {
+        constructor(id: number, nodeA: VisNode, nodeB: VisNode, constraint: Physics2DConstraint, relationUrl: string) {
             this.id = id;
             this.nodeA = nodeA;
             this.nodeB = nodeB;
@@ -163,7 +163,7 @@ module stovis {
             }
         }
 
-        pinNode(node: Node) {
+        pinNode(node: VisNode) {
 
             if (!node.pin) {
                 var pos = node.body.getPosition();
@@ -182,7 +182,7 @@ module stovis {
         /**
         Yeah, let's make some discouraged-yet-possible weird number indexed objects. See http://mathiasbynens.be/notes/javascript-properties
         */
-        nodeMap: { [id: number]: Node; };
+        nodeMap: { [id: number]: VisNode; };
         relationMap: { [id: number]: Relation; };
 		
 		
@@ -190,18 +190,29 @@ module stovis {
 		/**
 			 For each key in the object, a new node is created. Nodes IRI must be present in "@id" field
 			 @return Returns the root node.  
-		*/
+		*/					
+		/* addTree(treeObj : JsonLd) : VisNode {
+        
+			
+			new VisNode(
+			$.each(treeObj, (k)=>{
+				var v = treeObj[k];
+				if (k !== "@id"){
+					if ($.isPlainObject(v) && v["@id"]){
+						//new Relation( addTree(v["@id"]);
+						// constructor(id: number, nodeA: VisNode, nodeB: VisNode, constraint: Physics2DConstraint, relationUrl: string) {
+					} else {						
+						throw new Error("Only JsonLd objects are supported as field values!");						
+					}			
+				};
+							
+			}); 
+		} */
 		
-		// fff
-		
-		/* addTree(tree : JsonLd) : Node{
-		
-		}*/
-
-        /**
-            
+		/**
+        	Adds a relation both to the rdf store and to the physical simulator    
         */
-        addRelation(nodeA: Node, predicateUrl: string, nodeB: Node) : Relation {
+        addRelation(nodeA: VisNode, predicateUrl: string, nodeB: VisNode) : Relation {
 
             this.visStore.execute('INSERT DATA {  <' + nodeA.rdfNode.nominalValue + '> <' + predicateUrl + '> <' + nodeB.rdfNode.nominalValue + '> }');   
 
@@ -231,11 +242,11 @@ module stovis {
             return relation;
         }
 
-        addNode(x: number, y: number, radius: number, iri: string) : Node {
+        addNode(x: number, y: number, radius: number, iri: string) : VisNode {
             var vs = this.visStore;            
             var rdfNode = vs.rdf.createNamedNode(iri);
   
-            var node = new Node(null, rdfNode, null);
+            var node = new VisNode(null, rdfNode, null);
 
 
                         
@@ -462,7 +473,7 @@ module stovis {
             });
         }
 
-        drawNode(node: Node) {
+        drawNode(node: VisNode) {
             // console.log("Drawing node", node);
             var pos = node.body.getPosition();
             var circle = node.body.shapes[0];

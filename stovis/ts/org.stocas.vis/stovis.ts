@@ -1,5 +1,5 @@
 
-/// <reference path="../../../stolang/js/com.jquery/jquery.d.ts" />
+/// <reference path="../../../stolang/js/com.jquery/2.0.3/jquery.d.ts" />
 /// <reference path="../../../stolang/ts/org.stocas.lang/stolang.ts" />
 
  
@@ -72,6 +72,22 @@ module stovis {
             var data = circle._data;
             return data[(/*CIRCLE_RADIUS*/6)];            
         }
+    }
+    
+   
+    
+    export class VisRect {
+        /**
+         * @param x Coordinate x of the lower left corner
+         * @param y Coordinate yof the lower left corner
+         */
+        constructor(x : number, y : number, width : number, height : number){
+        
+        }
+        x : number;
+        y : number;
+        width : number;
+        height : number;
     }
 
     export class Relation {
@@ -188,12 +204,38 @@ module stovis {
 		
 		
 		/**
-			 For each key in the object, a new node is created. Nodes IRI must be present in "@id" field
-			 @return Returns the root node.  
+		     Adds a tree inside rect area, which MUST be empty. Todo make it auto-enlargable. Nodes of the tree are specified by treeObj. 
+			 For each key in the object, a new node is created. Nodes IRI must be present in "@id" field, and they must all be not be present in the db.
+			 @return Returns the root node. 
 		*/					
-		/* addTree(treeObj : JsonLd) : VisNode {
-        
-			
+		/* addTree(treeObj : JsonLd, rect : VisRect) : VisNode {
+            var outt : any = {};
+            $.extend(true, outt, treeObj); 
+            
+            outt.level = 0; 
+            var stackin = [outt];
+            var stackout = [];
+            var el;
+            var height = 0;
+             
+            while (stackin.length !== 0){
+                el = stackin.pop();
+                stackout.push(el);
+                $.each(el, (k)=>{
+                    var v = el[k];
+                    if (k !== "@id"){
+                        if ($.isPlainObject(v) && v["@id"]){
+                            v.level = el.level + 1;
+                            height = Math.max(height, v.level);
+                            stackin.push(v);                            
+                        } else {                        
+                            throw new Error("Only JsonLd objects are supported as field values!");                      
+                        }           
+                    };                              
+                });
+            };
+            console.log("outt = ", outt);
+             
 			new VisNode(
 			$.each(treeObj, (k)=>{
 				var v = treeObj[k];
@@ -206,7 +248,7 @@ module stovis {
 					}			
 				};
 							
-			}); 
+			});
 		} */
 		
 		/**

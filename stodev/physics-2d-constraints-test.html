@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
-    <title>StoDev</title>
+    <title>StoCAS</title>
 
     <style type="text/css">
 html, body, div, span, object, iframe, h1, h2, p, a, img, ul, li, fieldset, form, label, legend, table, thead, tbody, tfoot, tr, th, td {
@@ -16,7 +16,7 @@ html, body, div, span, object, iframe, h1, h2, p, a, img, ul, li, fieldset, form
 }
     </style>
 
-    <link rel="stylesheet" href="../stovis/styles/stovis.css" type="text/css" />
+    <link rel="stylesheet" href="../stovis/res/styles/stovis.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="styles/stodev.css">
 
     <!-- stuff by Turbulenz don't want crappy jquery ui <link rel="Stylesheet" type="text/css" href="css/jquery-ui-1.8.2.custom.css"/> -->
@@ -30,7 +30,7 @@ html, body, div, span, object, iframe, h1, h2, p, a, img, ul, li, fieldset, form
     <div id="titlebar" style="position: fixed; height: 65px; top: 0; right: 0; left: 0;">
         <strong style="font-size: 24px; line-height: 64px; margin: 16px;">
             <!-- block tz_app_title_name -->
-            StoDev 2D pyhsics constraints test
+            StoCAS 2D pyhsics constraints test
             <!-- end tz_app_title_name -->
         </strong>
         <div id="titlelogo"
@@ -135,11 +135,11 @@ html, body, div, span, object, iframe, h1, h2, p, a, img, ul, li, fieldset, form
 
     <div id="content"></div>
 
-   <!-- stocore -->
-    <script src="../stocore/js/libs/jquery/jquery-2.0.3.js"></script>
-    <script src="../stocore/js/libs/rdfstore/0.8.1/rdf-store-0.8.1.js"></script>
-    <script src="../stocore/js/libs/rdfstore/0.8.1/rdf-interface-api.0.8.1.js"></script>
-    <script src="../stocore/js/stocore.js"></script>
+   <script src="../stolang/js/com.facebook.immutable/2.0.3/immutable.js"></script>
+    <script src="../stolang/js/com.jquery/2.0.3/jquery.js"></script>
+    <script src="../stolang/js/js.rdfstore/0.8.1/rdf-store.js"></script>
+    <script src="../stolang/js/js.rdfstore/0.8.1/rdf-interface-api.js"></script>
+    <script src="../js/stolang/ts/org.stocas.lang/stolang.js"></script>
 
     <!-- stovis -->
 
@@ -173,38 +173,40 @@ html, body, div, span, object, iframe, h1, h2, p, a, img, ul, li, fieldset, form
         var TurbulenzEngine = {};
         </script>
 
-    <!-- <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/observer.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/requesthandler.js"></script> -->
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/debug.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/jsengine_base.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/jsengine.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/jsengine_debug.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/vmath.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/utilities.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/aabbtree.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/fontmanager.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/canvas.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/platform_canvas.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/tzdraw2d.js"></script>
+  <!-- <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/observer.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/requesthandler.js"></script> -->
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/debug.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/jsengine_base.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/jsengine.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/jsengine_debug.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/vmath.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/utilities.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/aabbtree.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/fontmanager.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/canvas.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/platform_canvas.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/tzdraw2d.js"></script>
     <!--
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/services/turbulenzservices.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/services/turbulenzbridge.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/services/gamesession.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/services/mappingtable.js"></script> -->
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/services.js"></script>
-    <!-- <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/shadermanager.js"></script> -->
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/physics2d.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/physics_canvas.js"></script>
-    <!-- <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/physics2ddevice.js"></script> 
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/draw2d.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/boxtree.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/physics2ddebugdraw.js"></script>
-    <script src="../stovis/js/libs/turbulenz-0.27/jslib-modular/textureeffects.js"></script> -->
-    <script src="../stovis/js/htmlcontrols.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/services/turbulenzservices.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/services/turbulenzbridge.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/services/gamesession.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/services/mappingtable.js"></script> -->
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/services.js"></script>
+    <!-- <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/shadermanager.js"></script> -->
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/physics2d.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/physics_canvas.js"></script>
+    <!-- <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/physics2ddevice.js"></script> 
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/draw2d.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/boxtree.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/physics2ddebugdraw.js"></script>
+    <script src="../stovis/js/biz.turbulenz/0.27/jslib-modular/textureeffects.js"></script> -->
+    <script src="../js/stovis/ts/org.stocas.vis/htmlcontrols.js"></script>
 
-    <script src="../stovis/test/js/physics-2d-constraints-test.js"></script>
+    <script src="../js/stovis/ts/org.stocas.vis/stovis.js"></script>    
 
-    <script src="test/js/stodev-test.js"></script> -->
+    <script src="../js/stovis/ts/org.stocas.vis.test/physics-2d-constraints-test.js"></script>
+
+    <script src="../js/stodev/ts/org.stocas.dev.test/stodev-test.js"></script> -->
     
 
 

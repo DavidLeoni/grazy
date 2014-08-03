@@ -1,4 +1,15 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/*
+to bundle stuff, run:
+	browserify make-immutable.js -o 2.0.3/immutable.js 
+to compress, run: 
+	uglifyjs 2.0.3/immutable.js -o 2.0.3/immutable.min.js --sourcemap 2.0.3/immutable.min.js.map
+*/
+
+Immutable = require('immutable');
+
+
+},{"immutable":2}],2:[function(require,module,exports){
 /**
  *  Copyright (c) 2014, Facebook, Inc.
  *  All rights reserved.
@@ -72,7 +83,7 @@ exports.OrderedMap = OrderedMap;
 exports.Set = ImmutableSet;
 exports.Record = Record;
 
-},{"./Map":2,"./OrderedMap":3,"./Range":4,"./Record":5,"./Repeat":6,"./Sequence":7,"./Set":8,"./Vector":9}],2:[function(require,module,exports){
+},{"./Map":3,"./OrderedMap":4,"./Range":5,"./Record":6,"./Repeat":7,"./Sequence":8,"./Set":9,"./Vector":10}],3:[function(require,module,exports){
 /**
  *  Copyright (c) 2014, Facebook, Inc.
  *  All rights reserved.
@@ -563,7 +574,7 @@ var __EMPTY_MAP;
 
 module.exports = Map;
 
-},{"./Immutable":1,"./Sequence":7}],3:[function(require,module,exports){
+},{"./Immutable":2,"./Sequence":8}],4:[function(require,module,exports){
 /**
  *  Copyright (c) 2014, Facebook, Inc.
  *  All rights reserved.
@@ -724,7 +735,7 @@ var __EMPTY_ORDERED_MAP;
 
 module.exports = OrderedMap;
 
-},{"./Immutable":1,"./Map":2,"./Vector":9}],4:[function(require,module,exports){
+},{"./Immutable":2,"./Map":3,"./Vector":10}],5:[function(require,module,exports){
 /**
  *  Copyright (c) 2014, Facebook, Inc.
  *  All rights reserved.
@@ -855,7 +866,7 @@ function invariant(condition, error) {
 
 module.exports = Range;
 
-},{"./Sequence":7,"./Vector":9}],5:[function(require,module,exports){
+},{"./Sequence":8,"./Vector":10}],6:[function(require,module,exports){
 /**
  *  Copyright (c) 2014, Facebook, Inc.
  *  All rights reserved.
@@ -999,7 +1010,7 @@ Record.prototype.asImmutable = ImmutableMap.prototype.asImmutable;
 
 module.exports = Record;
 
-},{"./Map":2,"./Sequence":7}],6:[function(require,module,exports){
+},{"./Map":3,"./Sequence":8}],7:[function(require,module,exports){
 /**
  *  Copyright (c) 2014, Facebook, Inc.
  *  All rights reserved.
@@ -1123,7 +1134,7 @@ var __EMPTY_REPEAT = new Repeat(undefined, 0);
 
 module.exports = Repeat;
 
-},{"./Immutable":1,"./Range":4,"./Sequence":7}],7:[function(require,module,exports){
+},{"./Immutable":2,"./Range":5,"./Sequence":8}],8:[function(require,module,exports){
 /**
  *  Copyright (c) 2014, Facebook, Inc.
  *  All rights reserved.
@@ -2021,7 +2032,7 @@ var __SENTINEL = {};
 exports.Sequence = Sequence;
 exports.IndexedSequence = IndexedSequence;
 
-},{"./Immutable":1,"./Map":2,"./OrderedMap":3,"./Set":8,"./Vector":9}],8:[function(require,module,exports){
+},{"./Immutable":2,"./Map":3,"./OrderedMap":4,"./Set":9,"./Vector":10}],9:[function(require,module,exports){
 /**
  *  Copyright (c) 2014, Facebook, Inc.
  *  All rights reserved.
@@ -2227,7 +2238,7 @@ var __EMPTY_SET;
 
 module.exports = Set;
 
-},{"./Map":2,"./Sequence":7}],9:[function(require,module,exports){
+},{"./Map":3,"./Sequence":8}],10:[function(require,module,exports){
 (function (global){
 /**
  *  Copyright (c) 2014, Facebook, Inc.
@@ -2891,10 +2902,4 @@ var __EMPTY_VNODE = new VNode([]);
 module.exports = Vector;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./Immutable":1,"./Map":2,"./Sequence":7}],10:[function(require,module,exports){
-/** Immutable 2.0.3 bundled by ODR devs */
-
-var Immutable = require('immutable');
-
-
-},{"immutable":1}]},{},[10]);
+},{"./Immutable":2,"./Map":3,"./Sequence":8}]},{},[1]);

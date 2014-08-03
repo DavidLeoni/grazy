@@ -1,4 +1,4 @@
-/// <reference path="../../js/org.nodejs/node.d.ts" />
+/// <reference path="../../js/org.nodejs/0.10.1/node.d.ts" />
 var http = require('http');
 var fs = require('fs');
 var path = require('path');

@@ -91,4 +91,24 @@ var stolang;
     })();
     stolang.Trees = Trees;
 })(stolang || (stolang = {}));
-//# sourceMappingURL=stolang.js.map
+
+var stolangTest;
+(function (stolangTest) {
+    var Trees = stolang.Trees;
+    var StoError = stolang.StoError;
+
+    var assertTrue = function (actual, expected) {
+        var res = Im.is(actual, expected);
+        if (res) {
+        } else {
+            throw new StoError("Failed assertion! Expected: ->", expected, "<-   Actual: ->", actual, "<-");
+        }
+        ;
+    };
+
+    assertTrue(Trees.fold({}, function (n) {
+        return null;
+    }, function (n) {
+        return 3;
+    }), 3);
+})(stolangTest || (stolangTest = {}));

@@ -1,4 +1,4 @@
-/// <reference path="../../../stolang/js/com.jquery/jquery.d.ts" />
+/// <reference path="../../../stolang/js/com.jquery/2.0.3/jquery.d.ts" />
 /// <reference path="../../../stolang/ts/org.stocas.lang/stolang.ts" />
 /// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/turbulenz.d.ts" />
 /// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/servicedatatypes.d.ts" />
@@ -63,6 +63,17 @@ var stovis;
         return VisNode;
     })();
     stovis.VisNode = VisNode;
+
+    var VisRect = (function () {
+        /**
+        * @param x Coordinate x of the lower left corner
+        * @param y Coordinate yof the lower left corner
+        */
+        function VisRect(x, y, width, height) {
+        }
+        return VisRect;
+    })();
+    stovis.VisRect = VisRect;
 
     var Relation = (function () {
         function Relation(id, nodeA, nodeB, constraint, relationUrl) {
@@ -374,11 +385,37 @@ var stovis;
         };
 
         /**
-        For each key in the object, a new node is created. Nodes IRI must be present in "@id" field
+        Adds a tree inside rect area, which MUST be empty. Todo make it auto-enlargable. Nodes of the tree are specified by treeObj.
+        For each key in the object, a new node is created. Nodes IRI must be present in "@id" field, and they must all be not be present in the db.
         @return Returns the root node.
         */
-        /* addTree(treeObj : JsonLd) : VisNode {
+        /* addTree(treeObj : JsonLd, rect : VisRect) : VisNode {
+        var outt : any = {};
+        $.extend(true, outt, treeObj);
         
+        outt.level = 0;
+        var stackin = [outt];
+        var stackout = [];
+        var el;
+        var height = 0;
+        
+        while (stackin.length !== 0){
+        el = stackin.pop();
+        stackout.push(el);
+        $.each(el, (k)=>{
+        var v = el[k];
+        if (k !== "@id"){
+        if ($.isPlainObject(v) && v["@id"]){
+        v.level = el.level + 1;
+        height = Math.max(height, v.level);
+        stackin.push(v);
+        } else {
+        throw new Error("Only JsonLd objects are supported as field values!");
+        }
+        };
+        });
+        };
+        console.log("outt = ", outt);
         
         new VisNode(
         $.each(treeObj, (k)=>{

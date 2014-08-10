@@ -65,31 +65,32 @@ declare module Rdfstore {
 declare var rdfstore: Rdfstore.Base;
 
 module stolang {
-    import Im = Immutable;
+    import Imm = Immutable;
     export var STOCAS_PREFIX = "stocas";
     export var STOCAS_IRI = "https://github.com/davidleoni/stocas/";
 
 
     /**
      * This class encapsulates Javascript Error object. It doesn't extend it because all the error inheritance stuff 
-     * in Javascript is really fucked up
+     * in Javascript is really fucked up. 
      * 
      */
     export class StoErr {
         name: string;
-        message : string;
+        message: string;
         error: Error;
         params: any[];
 
         /**
-         * @param message Overrides message in Error. The field name of provided Error is set to " ", so it doesn't show in console 
+         * You must pass a JavaScript Error so browser can keep track of stack execution. Message in original error is not considered.
+         * Usage example: new StoErr(new Error(), "We got a problem!", "This object looks fishy: ", {a:666});  
+         * @param message Overrides message in Error.         
          */
-        constructor(error : Error, message, ...params) {
+        constructor(error: Error, message, ...params) {
             // console.error.apply(null, params);      
             this.name = (<any>this.constructor).name;
-            this.message = message;  
+            this.message = message;
             this.error = error;
-            this.error.name = " ";           
             this.params = params;
         }
 
@@ -102,27 +103,27 @@ module stolang {
          * Returns array with name, message plus all params
          */
         allParams(): any[] {
-            var ret = this.params.slice(0)   
+            var ret = this.params.slice(0)
             var afterMsg = "\n";
-            if (this.params.length > 0){
+            if (this.params.length > 0) {
                 afterMsg = "\n";
-            }         
+            }
             ret.unshift(this.message + afterMsg);
             ret.unshift(this.name + ":");
             return ret;
         }
 
         logToConsole(): void {
-            console.log.apply(console, this.allParams());            
+            console.log.apply(console, this.allParams());
             console.log(this.error);
-            
+
 
         }
-        
+
         toConsole(): void {
-            var completeParams = this.allParams().slice(0);            
-            completeParams.push(this.error);
-            console.error.apply(console, completeParams);            
+            var completeParams = this.allParams().slice(0);
+            completeParams.push(" \n", this.error);
+            console.error.apply(console, completeParams);
         }
     }
 
@@ -131,8 +132,91 @@ module stolang {
      */
     export interface TreeVisitor<N, M> {
         isLeaf(t: N): boolean;
-        getChildren(t: N): Im.Sequence<N, number>;
+        getChildren(t: N): Imm.Sequence<N, number>;
     }
+
+    export class EqErr extends StoErr {
+        constructor(error: Error, expected, actual) {
+            super(error, "Failed assertion!",
+                "  Expected ->", expected, "<-\n",
+                "  Actual   ->", actual, "<-");
+            this.expected = expected;
+            this.actual = actual;
+        }
+        actual: any;
+        expected: any;
+    }
+
+
+    export module test {
+        /**
+         * Doesn't throw any exception, 
+         * @return null if no error occurred
+        */
+        export function assertEquals(actual, expected): StoErr {
+            var res = Imm.is(actual, expected);
+            if (res) {
+                return null;
+            } else {
+                return new EqErr(new Error(), expected, actual);
+            };
+        };
+
+        export class TestResult {
+            testName: string
+        test: any; // todo should be a method sig 
+            error: StoErr;
+
+            constructor(testName, test, error?: StoErr) {
+                this.testName = testName;
+                this.test = test;
+                this.error = error;
+            }
+        }
+
+        export class TestSuite {
+            tests: any;
+            testResults: TestResult[];
+            passedTests: TestResult[];
+            failedTests: TestResult[];
+
+            constructor (tests) {
+                this.testResults = [];
+                this.passedTests = [];
+                this.failedTests = [];
+                this.tests = tests;
+            }
+
+            run() {
+                this.testResults = [];
+                this.passedTests = [];
+                this.failedTests = [];
+
+                for (var key in this.tests) {
+                    var stoerr: StoErr = null;
+                    try {
+                        stoerr = this.tests[key]();
+                    } catch (catchedError) {
+                        stoerr = new StoErr(catchedError, "Test threw an Error!");
+                    }
+                    var testRes = new TestResult(key, this.tests[key], stoerr);
+                    this.testResults.push(testRes);
+
+                    if (stoerr) {
+                        this.failedTests.push(testRes);
+                    } else {
+                        this.passedTests.push(testRes);
+                    }
+                }
+
+            }
+        }
+    }
+
+
+
+
+
 
     export class Trees {
         /**

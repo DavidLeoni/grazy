@@ -69,24 +69,60 @@ module stolang {
     export var STOCAS_PREFIX = "stocas";
     export var STOCAS_IRI = "https://github.com/davidleoni/stocas/";
 
-    export class StoError implements Error {
+
+    /**
+     * This class encapsulates Javascript Error object. It doesn't extend it because all the error inheritance stuff 
+     * in Javascript is really fucked up
+     * 
+     */
+    export class StoErr {
         name: string;
-        message: string;
-        stack: any;
+        message : string;
+        error: Error;
         params: any[];
 
-        protoype: TypeError;
-        constructor(...params) {
-
-            console.error.apply(null, params)
-
-        this.name = "StoError";
-            this.message = params[0];
-            this.stack = (<any>new Error()).stack;
+        /**
+         * @param message Overrides message in Error. The field name of provided Error is set to " ", so it doesn't show in console 
+         */
+        constructor(error : Error, message, ...params) {
+            // console.error.apply(null, params);      
+            this.name = (<any>this.constructor).name;
+            this.message = message;  
+            this.error = error;
+            this.error.name = " ";           
             this.params = params;
         }
+
         toString() {
-            return this.params.join();
+            return this.allParams().join("");
+        }
+
+
+        /**
+         * Returns array with name, message plus all params
+         */
+        allParams(): any[] {
+            var ret = this.params.slice(0)   
+            var afterMsg = "\n";
+            if (this.params.length > 0){
+                afterMsg = "\n";
+            }         
+            ret.unshift(this.message + afterMsg);
+            ret.unshift(this.name + ":");
+            return ret;
+        }
+
+        logToConsole(): void {
+            console.log.apply(console, this.allParams());            
+            console.log(this.error);
+            
+
+        }
+        
+        toConsole(): void {
+            var completeParams = this.allParams().slice(0);            
+            completeParams.push(this.error);
+            console.error.apply(console, completeParams);            
         }
     }
 

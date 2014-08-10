@@ -5,25 +5,58 @@ var stolang;
     stolang.STOCAS_PREFIX = "stocas";
     stolang.STOCAS_IRI = "https://github.com/davidleoni/stocas/";
 
-    var StoError = (function () {
-        function StoError() {
+    /**
+    * This class encapsulates Javascript Error object. It doesn't extend it because all the error inheritance stuff
+    * in Javascript is really fucked up
+    *
+    */
+    var StoErr = (function () {
+        /**
+        * @param message Overrides message in Error. The field name of provided Error is set to " ", so it doesn't show in console
+        */
+        function StoErr(error, message) {
             var params = [];
-            for (var _i = 0; _i < (arguments.length - 0); _i++) {
-                params[_i] = arguments[_i + 0];
+            for (var _i = 0; _i < (arguments.length - 2); _i++) {
+                params[_i] = arguments[_i + 2];
             }
-            console.error.apply(null, params);
-
-            this.name = "StoError";
-            this.message = params[0];
-            this.stack = (new Error()).stack;
+            // console.error.apply(null, params);
+            this.name = this.constructor.name;
+            this.message = message;
+            this.error = error;
+            this.error.name = " ";
             this.params = params;
         }
-        StoError.prototype.toString = function () {
-            return this.params.join();
+        StoErr.prototype.toString = function () {
+            return this.allParams().join("");
         };
-        return StoError;
+
+        /**
+        * Returns array with name, message plus all params
+        */
+        StoErr.prototype.allParams = function () {
+            var ret = this.params.slice(0);
+            var afterMsg = "\n";
+            if (this.params.length > 0) {
+                afterMsg = "\n";
+            }
+            ret.unshift(this.message + afterMsg);
+            ret.unshift(this.name + ":");
+            return ret;
+        };
+
+        StoErr.prototype.logToConsole = function () {
+            console.log.apply(console, this.allParams());
+            console.log(this.error);
+        };
+
+        StoErr.prototype.toConsole = function () {
+            var completeParams = this.allParams().slice(0);
+            completeParams.push(this.error);
+            console.error.apply(console, completeParams);
+        };
+        return StoErr;
     })();
-    stolang.StoError = StoError;
+    stolang.StoErr = StoErr;
 
     
 

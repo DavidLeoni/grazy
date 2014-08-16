@@ -14,7 +14,14 @@ module stolangTest {
     import assertEquals = stolang.test.assertEquals;
     import signal = stolang.signal;
   
-
+    var getCs = (n)=>n.cs ? <any[]> n.cs : [];
+    var sumCs = (n, mcs)=> mcs.length > 0 ?
+                                            mcs.reduce((acc:number, el : number)=>{
+                                                console.log("acc = ", acc, "el = ", el);
+                                                return acc+el;
+                                            })
+                                            : n;
+    
     export var tests = {
         /** 'testMethodName' should be visualized in UI */
         testMethodName : ()=>null, 
@@ -37,64 +44,84 @@ module stolangTest {
                                 3);
         },
         // nodes can be either numbers or {cs:[...]}
-        testSumManyNodesTree(){
+        testSumManyNodesTree_1(){
+            return assertEquals(Trees.fold({cs:[
+                                                {cs:[1]}
+                                               ]}, 
+                                                getCs,
+                                                sumCs),
+                                1);
+        },        
+        
+        // nodes can be either numbers or {cs:[...]}
+        testSumManyNodesTree_2(){
             return assertEquals(Trees.fold({cs:[    
                                                 {cs:[1]},
                                                 {cs:[2,3]}
                                                ]}, 
-                                (n)=>n.cs ? <any> n.cs : [],
-                                (n, mcs)=> mcs.length > 0 ?
-                                            mcs.reduce((acc:number, el : number)=>{
-                                                console.log("acc = ", acc, "el = ", el);
-                                                return acc+el;
-                                            })
-                                            : n),
+                                getCs,
+                                sumCs),
                                 6);
-        }        
+        },
+        testHeight_0 : ()=>assertEquals(Trees.height(<any> {}, getCs), 0),
+        testHeight_1 : ()=>assertEquals(Trees.height(<any> {cs:[{}]}, getCs), 1),
+        testHeight_2 : ()=>assertEquals(Trees.height(<any> {cs:[{cs: [{}
+                                                                     ]
+                                                                }]}, getCs), 2),
+        testHeight_3 : ()=>assertEquals(Trees.height(<any> {cs:[{cs: [{},
+                                                                      {cs: [{}]}
+                                                                     ]
+                                                                }]}, getCs), 3)     
     }
 
   
     
     
-    var runTests = function(testSuite : TestSuite, targetDiv) {                
+    var runTests = function(testSuite : TestSuite, targetDiv) {                                    
+                
+        var br = ()=>targetDiv.append($('<br/>'));
         
         targetDiv.text("");
         
-        var br = ()=>targetDiv.append($('<br/>'));
-        
+        $('<h1>').text(testSuite.name + " tests")
+                 .appendTo(targetDiv);
+        br();
         
         testSuite.run();
-
-        $('<p>')            
-            .text( "Total tests: " + testSuite.testResults.length)
-            .appendTo(targetDiv);
         
-        br();
             
         // document.write("<span class='error'> Total tests: " + (testSuite.passedTests.length + testSuite.failedTests.length) + "</span></br>");
         // document.write("<br/>");
-        if (testSuite.failedTests.length > 0) {
-            $('<span>')
+        var nFailedTests = testSuite.failedTests.length;
+        
+        if (nFailedTests > 0) {
+            
+            $('<h2>')
             .addClass('error')
-            .text("Suite FAILURE: " + testSuite.failedTests.length + " tests failed. ")
+            .addClass('suite-title')
+            .text("Suite FAILURE: " + nFailedTests + " test" + (nFailedTests > 1 ? "s" : "") + " failed. ")
             .appendTo(targetDiv);
             //document.write("<span class='error'> Suite FAILURE: " + testSuite.failedTests.length + " tests failed. </span>");
-            $('<span>')
+            $('<h3>')
             .addClass('error')
-            .text("Check console after clicking on failed tests.")
+            .text("Click on failed tests and check output in the console.")
             .appendTo(targetDiv); 
-            br();
-            br();       
+                
             // document.write("<span class='error'>Check console after  clicking on failed tests.</span><br/>");
             // document.write("<br/>");
         } else {
-            $('<p>')
-            .addClass('success')
+            $('<h2>')
+            .addClass('success')            
             .text("Suite SUCCESS: All tests passed. ")
             .appendTo(targetDiv);            
             // document.write("<span class='success'> Suite SUCCESS: All tests passed. </span></br>");
         }
 
+        $('<p>')            
+            .text( "Total tests: " + testSuite.testResults.length)
+            .appendTo(targetDiv);        
+        br();
+        
         testSuite.testResults.forEach((tr) => {
             var testStatus = null;
             var styleClass = null;
@@ -118,8 +145,9 @@ module stolangTest {
 
                     return false;
                 }));
+            targetDiv.append($('<span>').html("&nbsp;&nbsp;&nbsp;"));
             targetDiv.append($('<span>')
-                .text(" Run again")
+                .html("(Rerun)")
                 .addClass(styleClass)
                 .on('click', () => {                     
                     window.location.href = window.location.pathname +  "?" + $.param({test:tr.testName});                     
@@ -141,17 +169,18 @@ module stolangTest {
     
     var singleTestName = getParameterByName("test");
     var  testSuite : TestSuite;
+    var suiteName = "Stolang";
     if (singleTestName){
         if (tests[singleTestName]){
             var boxedTest = {};
             boxedTest[singleTestName] = tests[singleTestName];
-            testSuite = new TestSuite(boxedTest);             
+            testSuite = new TestSuite(suiteName, boxedTest);             
         } else {
             signal(new Error(), "There is no test called " + singleTestName + " !!! Defaulting to all tests.");
-            testSuite = new TestSuite(tests);
+            testSuite = new TestSuite(suiteName, tests);
         }
     } else {
-        testSuite = new TestSuite(tests);
+        testSuite = new TestSuite(suiteName,tests);
     }    
     
     var targetDiv = $('<div>');

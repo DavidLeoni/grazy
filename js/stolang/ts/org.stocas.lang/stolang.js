@@ -146,10 +146,11 @@ var stolang;
         _test.TestResult = TestResult;
 
         var TestSuite = (function () {
-            function TestSuite(tests) {
+            function TestSuite(name, tests) {
                 this.testResults = [];
                 this.passedTests = [];
                 this.failedTests = [];
+                this.name = name;
                 this.tests = tests;
             }
             TestSuite.prototype.run = function () {
@@ -196,29 +197,54 @@ var stolang;
 
             /**
             inserts node to existing children. If children list is full,
-            resolves expressions popping nodes in stack2 until meets a list with not enough children
+            resolves expressions popping nodes in stack2 until meets a list
+            with not enough children
             */
             var nodeToStack2 = function (node) {
+                console.log("nodeToStack2 stack1 = ", stack1, " stack2 ", stack2);
+
                 var toInsert = makeM(node, []);
+
+                // todo remove debugging stuff
+                if (toInsert.cs) {
+                    console.error("toInsert: ", toInsert);
+                    throw new Error("Found cs in toInsert!");
+                }
+                console.log("toInsert before while stack2.length > 0: ", toInsert);
 
                 while (stack2.length > 0) {
                     var top2 = stack2[0];
                     top2.children.unshift(toInsert);
+                    if (toInsert.cs) {
+                        console.error("toInsert: ", toInsert);
+                        throw new Error("Found cs to insert!!");
+                    }
+                    console.log("inserted in top2: ", toInsert);
 
-                    if (top2.neededChildren == stack2[0].children.length) {
-                        var poppedTop2 = stack2.pop();
-                        toInsert = makeM(poppedTop2.node, poppedTop2.children);
+                    if (top2.neededChildren == top2.children.length) {
+                        var shiftedTop2 = stack2.shift();
+                        console.log("shiftedTop2 = ", shiftedTop2);
+
+                        //debugger;
+                        toInsert = makeM(shiftedTop2.node, shiftedTop2.children);
                     } else {
                         return toInsert;
                     }
+                    if (toInsert.cs) {
+                        console.error("toInsert: ", toInsert);
+                        throw new Error("Found cs to insert!!");
+                    }
+                    console.log("toInsert end of while stack2.length > 0: ", toInsert);
                 }
 
+                console.log("toInsert after while stack2.length > 0: ", toInsert);
                 return toInsert;
             };
 
             var ret;
 
             while (stack1.length > 0) {
+                console.log("while stack1.length > 0:  stack1 = ", stack1, " stack2 ", stack2);
                 var el = stack1.pop();
                 var children = getChildren(el);
 
@@ -242,6 +268,12 @@ var stolang;
 
             throw new Error("Shouldn't arrive till here...");
             return makeM(null, []);
+        };
+
+        Trees.height = function (node, getChildren) {
+            return Trees.fold(node, getChildren, function (n, cs) {
+                return cs.length ? Math.max.apply(null, cs) + 1 : 0;
+            });
         };
         return Trees;
     })();

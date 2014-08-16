@@ -13,6 +13,23 @@ var stolang;
     stolang.STOCAS_IRI = "https://github.com/davidleoni/stocas/";
 
     /**
+    * Usage: callConstructor(MyConstructor, arg1, arg2);
+    */
+    stolang.callConstructor = function (constr) {
+        var factoryFunction = constr.bind.apply(constr, arguments);
+        return new factoryFunction();
+    };
+
+    /**
+    * Usage: applyToConstructor(MyConstructor, [arg1, arg2]);
+    */
+    stolang.applyToConstructor = function (constr, argArray) {
+        var args = [null].concat(argArray);
+        var factoryFunction = constr.bind.apply(constr, args);
+        return new factoryFunction();
+    };
+
+    /**
     * This class encapsulates Javascript Error object. It doesn't extend it because all the error inheritance stuff
     * in Javascript is really fucked up.
     *
@@ -66,8 +83,6 @@ var stolang;
     })();
     stolang.StoErr = StoErr;
 
-    
-
     var EqErr = (function (_super) {
         __extends(EqErr, _super);
         function EqErr(error, expected, actual) {
@@ -78,6 +93,30 @@ var stolang;
         return EqErr;
     })(StoErr);
     stolang.EqErr = EqErr;
+
+    /**
+    * Takes a variable number of arguments and displays them as concatenated strings in an alert message, plus it calls console.error with the same arguments. Usage example:
+    * signal(new Error(), "We got a problem", "Expected: ", 3, " got:", 2 + 2);
+    * @returns {StoErr}
+    */
+    stolang.signal = function (error) {
+        var args = [];
+        for (var _i = 0; _i < (arguments.length - 1); _i++) {
+            args[_i] = arguments[_i + 1];
+        }
+        var i;
+        var arr = [];
+        for (i = 0; i < arguments.length; i++) {
+            arr.push(arguments[i]);
+        }
+        var exc = stolang.applyToConstructor(StoErr, arr);
+
+        exc.toConsole();
+        alert(exc.toString() + "\n\nLook in the console for more details.");
+        return exc;
+    };
+
+    
 
     (function (_test) {
         /**
@@ -145,11 +184,14 @@ var stolang;
         function Trees() {
         }
         /**
-        * @param getChildren if null node is a leaf
+        * @param getChildren leaf nodes have zero children
         */
-        Trees.fold = function (rootNode, /** if null node is considered a leaf */
-        getChildren, makeM) {
+        Trees.fold = function (rootNode, getChildren, makeM) {
+            /** Holds original nodes */
             var stack1 = [rootNode];
+
+            /** Holds nodes-as-expressions that still need to be completely filled with
+            M-fied children */
             var stack2 = [];
 
             /**
@@ -181,7 +223,7 @@ var stolang;
                 var children = getChildren(el);
 
                 // non-leaf node
-                if (children == null || children.length == 0) {
+                if (children.length == 0) {
                     ret = nodeToStack2(el);
                     if (stack2.length == 0) {
                         return ret;

@@ -69,7 +69,23 @@ module stolang {
     export var STOCAS_PREFIX = "stocas";
     export var STOCAS_IRI = "https://github.com/davidleoni/stocas/";
 
-
+    /**
+     * Usage: callConstructor(MyConstructor, arg1, arg2); 
+     */
+    export var callConstructor = function(constr) {
+        var factoryFunction = constr.bind.apply(constr, arguments);
+        return new factoryFunction();
+    };
+    
+    /**
+     * Usage: applyToConstructor(MyConstructor, [arg1, arg2]); 
+     */    
+    export var applyToConstructor = function(constr, argArray) {
+        var args = [null].concat(argArray);
+        var factoryFunction = constr.bind.apply(constr, args);
+        return new factoryFunction();
+    };
+    
     /**
      * This class encapsulates Javascript Error object. It doesn't extend it because all the error inheritance stuff 
      * in Javascript is really fucked up. 
@@ -127,14 +143,6 @@ module stolang {
         }
     }
 
-    /**
-     * Visits nodes of type N and outputs type M
-     */
-    export interface TreeVisitor<N, M> {
-        isLeaf(t: N): boolean;
-        getChildren(t: N): Imm.Sequence<N, number>;
-    }
-
     export class EqErr extends StoErr {
         constructor(error: Error, expected, actual) {
             super(error, "Failed assertion!",
@@ -146,6 +154,37 @@ module stolang {
         actual: any;
         expected: any;
     }
+        
+    
+    /**
+     * Takes a variable number of arguments and displays them as concatenated strings in an alert message, plus it calls console.error with the same arguments. Usage example:
+     * signal(new Error(), "We got a problem", "Expected: ", 3, " got:", 2 + 2); 
+     * @returns {StoErr}
+     */
+    export var signal = function(error : Error, ...args) {
+        var i;
+        var arr = [];
+        for (i = 0; i < arguments.length; i++) {
+            arr.push(arguments[i]);
+        }        
+        var exc = applyToConstructor(StoErr, arr);
+        
+        exc.toConsole();
+        alert(exc.toString() + "\n\nLook in the console for more details." );
+        return exc;
+    };
+    
+    
+    
+    /**
+     * Visits nodes of type N and outputs type M
+     */
+    export interface TreeVisitor<N, M> {
+        isLeaf(t: N): boolean;
+        getChildren(t: N): Imm.Sequence<N, number>;
+    }
+
+
 
 
     export module test {
@@ -220,15 +259,16 @@ module stolang {
 
     export class Trees {
         /**
-         * @param getChildren if null node is a leaf
+         * @param getChildren leaf nodes have zero children
          */
-        static fold<N, M>(rootNode: N,
-            /** if null node is considered a leaf */
+        static fold<N, M>(rootNode: N,            
             getChildren: (t: N) => N[],
             makeM: (t: N, children: M[]) => M): M {
 
-
+            /** Holds original nodes */
             var stack1 = [rootNode];
+            /** Holds nodes-as-expressions that still need to be completely filled with
+              M-fied children */  
             var stack2: {
                 node: N;
                 neededChildren: number;
@@ -267,7 +307,7 @@ module stolang {
                 var children = getChildren(el);
 
                 // non-leaf node                                                
-                if (children == null || children.length == 0) {
+                if (children.length == 0) {
                     ret = nodeToStack2(el);
                     if (stack2.length == 0) {
                         return ret;

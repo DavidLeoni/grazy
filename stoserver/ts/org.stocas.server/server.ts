@@ -5,6 +5,7 @@ var fs = require('fs');
 var path = require('path');
 
 http.createServer(function (request, response) {
+    console.warn("***********   WARNING: THIS SERVER IS NOT TESTED WHATSOVER, JUST DON'T USE IT, NOT EVEN FOR DEBUGGING!!...*********");
     console.log('request starting...');
 
     var filePath = '.' + request.url;

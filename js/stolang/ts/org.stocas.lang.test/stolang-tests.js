@@ -9,17 +9,44 @@ var stolangTest;
 
     var TestSuite = stolang.test.TestSuite;
     var assertEquals = stolang.test.assertEquals;
+    var signal = stolang.signal;
 
     stolangTest.tests = {
+        /** 'testMethodName' should be visualized in UI */
+        testMethodName: function () {
+            return null;
+        },
         testEmptyTree: function () {
             return assertEquals(Trees.fold({}, function (n) {
-                return null;
+                return [];
             }, function (n) {
                 return 3;
             }), 3);
         },
-        testError: function () {
-            return assertEquals(true, false);
+        // nodes can be either numbers or {cs:[...]}
+        testSumOneNodeTree: function () {
+            return assertEquals(Trees.fold({ cs: [1, 2] }, function (n) {
+                return n.cs ? n.cs : [];
+            }, function (n, mcs) {
+                return mcs.length > 0 ? mcs.reduce(function (acc, el) {
+                    console.log("acc = ", acc, "el = ", el);
+                    return acc + el;
+                }) : n;
+            }), 3);
+        },
+        // nodes can be either numbers or {cs:[...]}
+        testSumManyNodesTree: function () {
+            return assertEquals(Trees.fold({ cs: [
+                    { cs: [1] },
+                    { cs: [2, 3] }
+                ] }, function (n) {
+                return n.cs ? n.cs : [];
+            }, function (n, mcs) {
+                return mcs.length > 0 ? mcs.reduce(function (acc, el) {
+                    console.log("acc = ", acc, "el = ", el);
+                    return acc + el;
+                }) : n;
+            }), 6);
         }
     };
 
@@ -32,7 +59,7 @@ var stolangTest;
 
         testSuite.run();
 
-        $('<p>').addClass('error').text("Total tests: " + (testSuite.passedTests.length + testSuite.failedTests.length)).appendTo(targetDiv);
+        $('<p>').text("Total tests: " + testSuite.testResults.length).appendTo(targetDiv);
 
         br();
 
@@ -73,17 +100,34 @@ var stolangTest;
                 return false;
             }));
             targetDiv.append($('<span>').text(" Run again").addClass(styleClass).on('click', function () {
-                console.error("TODO - quite useless right now....");
-                var newTests = {};
-                newTests[tr.testName] = tr.test;
-                runTests(new TestSuite(newTests), targetDiv);
+                window.location.href = window.location.pathname + "?" + $.param({ test: tr.testName });
                 return false;
             }));
             br();
         });
     };
 
-    var testSuite = new TestSuite(stolangTest.tests);
+    var getParameterByName = function (name) {
+        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+        return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    };
+
+    var singleTestName = getParameterByName("test");
+    var testSuite;
+    if (singleTestName) {
+        if (stolangTest.tests[singleTestName]) {
+            var boxedTest = {};
+            boxedTest[singleTestName] = stolangTest.tests[singleTestName];
+            testSuite = new TestSuite(boxedTest);
+        } else {
+            signal(new Error(), "There is no test called " + singleTestName + " !!! Defaulting to all tests.");
+            testSuite = new TestSuite(stolangTest.tests);
+        }
+    } else {
+        testSuite = new TestSuite(stolangTest.tests);
+    }
+
     var targetDiv = $('<div>');
     runTests(testSuite, targetDiv);
     targetDiv.appendTo($("body"));

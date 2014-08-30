@@ -9,6 +9,8 @@ var __extends = this.__extends || function (d, b) {
 var stolang;
 (function (stolang) {
     var Imm = Immutable;
+    var ImmOrdMap = Immutable.OrderedMap;
+
     stolang.STOCAS_PREFIX = "stocas";
     stolang.STOCAS_IRI = "https://github.com/davidleoni/stocas/";
 
@@ -69,12 +71,14 @@ var stolang;
             return ret;
         };
 
-        StoErr.prototype.logToConsole = function () {
+        /** Reports the error to console with console.log */
+        StoErr.prototype.consoleLog = function () {
             console.log.apply(console, this.allParams());
             console.log(this.error);
         };
 
-        StoErr.prototype.toConsole = function () {
+        /** Reports the error to console with console.error */
+        StoErr.prototype.consoleError = function () {
             var completeParams = this.allParams().slice(0);
             completeParams.push(" \n", this.error);
             console.error.apply(console, completeParams);
@@ -85,21 +89,31 @@ var stolang;
 
     var EqErr = (function (_super) {
         __extends(EqErr, _super);
-        function EqErr(error, expected, actual) {
-            _super.call(this, error, "Failed assertion!", "  Expected ->", expected, "<-\n", "  Actual   ->", actual, "<-");
-            this.expected = expected;
+        function EqErr(error, actual) {
+            _super.call(this, error, "Failed assertion!", "  Expected something different than ->", actual, "<-\n");
             this.actual = actual;
         }
         return EqErr;
     })(StoErr);
     stolang.EqErr = EqErr;
 
+    var NotEqErr = (function (_super) {
+        __extends(NotEqErr, _super);
+        function NotEqErr(error, expected, actual) {
+            _super.call(this, error, "Failed assertion!", "  Expected ->", expected, "<-\n", "  Actual   ->", actual, "<-");
+            this.expected = expected;
+            this.actual = actual;
+        }
+        return NotEqErr;
+    })(StoErr);
+    stolang.NotEqErr = NotEqErr;
+
     /**
     * Takes a variable number of arguments and displays them as concatenated strings in an alert message, plus it calls console.error with the same arguments. Usage example:
     * signal(new Error(), "We got a problem", "Expected: ", 3, " got:", 2 + 2);
     * @returns {StoErr}
     */
-    stolang.signal = function (error) {
+    stolang.report = function (error) {
         var args = [];
         for (var _i = 0; _i < (arguments.length - 1); _i++) {
             args[_i] = arguments[_i + 1];
@@ -120,15 +134,32 @@ var stolang;
 
     (function (_test) {
         /**
+        * Returns EqErr in case actual is equals to notExpected.
+        * Doesn't throw any exception
+        * @return null if no error occurred
+        */
+        function assertNotEquals(notExpected, actual) {
+            var res = Imm.is(actual, notExpected);
+            if (res) {
+                return new EqErr(new Error(), actual);
+            } else {
+                return null;
+            }
+            ;
+        }
+        _test.assertNotEquals = assertNotEquals;
+        ;
+
+        /**
         * Doesn't throw any exception,
         * @return null if no error occurred
         */
-        function assertEquals(actual, expected) {
+        function assertEquals(expected, actual) {
             var res = Imm.is(actual, expected);
             if (res) {
                 return null;
             } else {
-                return new EqErr(new Error(), expected, actual);
+                return new NotEqErr(new Error(), expected, actual);
             }
             ;
         }
@@ -163,7 +194,11 @@ var stolang;
                     try  {
                         stoerr = this.tests[key]();
                     } catch (catchedError) {
-                        stoerr = new StoErr(catchedError, "Test threw an Error!");
+                        if (catchedError instanceof StoErr) {
+                            stoerr = catchedError;
+                        } else {
+                            stoerr = new StoErr(catchedError, "Test threw an Error!");
+                        }
                     }
                     var testRes = new TestResult(key, this.tests[key], stoerr);
                     this.testResults.push(testRes);
@@ -185,11 +220,19 @@ var stolang;
         function Trees() {
         }
         /**
+        * Eagerly applies function makeM to
         * @param getChildren leaf nodes have zero children
+        * @param makeM function that takes node to M-ify,
+        *        the field name (or index) that was holding it
+        *        and its now M-fied children
         */
         Trees.fold = function (rootNode, getChildren, makeM) {
+            console.log("Trees.fold begin ");
+
             /** Holds original nodes */
-            var stack1 = [rootNode];
+            var stack1 = [{
+                    parentField: null,
+                    node: rootNode }];
 
             /** Holds nodes-as-expressions that still need to be completely filled with
             M-fied children */
@@ -198,12 +241,12 @@ var stolang;
             /**
             inserts node to existing children. If children list is full,
             resolves expressions popping nodes in stack2 until meets a list
-            with not enough children
+            with not enough children.
             */
-            var nodeToStack2 = function (node) {
+            var nodeToStack2 = function (fieldToInsert, node) {
                 console.log("nodeToStack2 stack1 = ", stack1, " stack2 ", stack2);
 
-                var toInsert = makeM(node, []);
+                var toInsert = makeM(fieldToInsert, node, ImmOrdMap.empty());
 
                 // todo remove debugging stuff
                 if (toInsert.cs) {
@@ -214,19 +257,20 @@ var stolang;
 
                 while (stack2.length > 0) {
                     var top2 = stack2[0];
-                    top2.children.unshift(toInsert);
+                    top2.children.unshift([fieldToInsert, toInsert]);
                     if (toInsert.cs) {
                         console.error("toInsert: ", toInsert);
                         throw new Error("Found cs to insert!!");
                     }
                     console.log("inserted in top2: ", toInsert);
+                    console.log("top2.children.length ", top2.children.length);
+                    console.log("top2.children ", top2.children);
 
                     if (top2.neededChildren == top2.children.length) {
                         var shiftedTop2 = stack2.shift();
                         console.log("shiftedTop2 = ", shiftedTop2);
 
-                        //debugger;
-                        toInsert = makeM(shiftedTop2.node, shiftedTop2.children);
+                        toInsert = makeM(fieldToInsert, shiftedTop2.node, ImmOrdMap.from(shiftedTop2.children));
                     } else {
                         return toInsert;
                     }
@@ -243,36 +287,46 @@ var stolang;
 
             var ret;
 
+            console.log("before while stack1.length > 0:  stack1 = ", stack1, " stack2 ", stack2);
             while (stack1.length > 0) {
                 console.log("while stack1.length > 0:  stack1 = ", stack1, " stack2 ", stack2);
                 var el = stack1.pop();
-                var children = getChildren(el);
+
+                var children = getChildren(el.node);
 
                 // non-leaf node
-                if (children.length == 0) {
-                    ret = nodeToStack2(el);
-                    if (stack2.length == 0) {
+                if (children.length === 0) {
+                    ret = nodeToStack2(el.parentField, el.node);
+                    if (stack2.length === 0) {
+                        if (stack1.length > 0) {
+                            throw new StoErr(new Error(), "There are still elements in stack1: ", stack1);
+                        }
                         return ret;
                     }
                 } else {
-                    $.each(children, function (i, c) {
-                        stack1.unshift(c);
+                    children.forEach(function (c, k) {
+                        stack1.unshift({
+                            node: c,
+                            parentField: k });
                     });
+                    var childrenContainer = [];
                     stack2.unshift({
-                        node: el,
+                        node: el.node,
+                        parentField: el.parentField,
                         neededChildren: children.length,
-                        children: []
+                        children: childrenContainer
                     });
                 }
             }
 
             throw new Error("Shouldn't arrive till here...");
-            return makeM(null, []);
+            return makeM(null, null, null);
         };
 
         Trees.height = function (node, getChildren) {
-            return Trees.fold(node, getChildren, function (n, cs) {
-                return cs.length ? Math.max.apply(null, cs) + 1 : 0;
+            return Trees.fold(node, getChildren, function (parentField, n, cs) {
+                console.log("inside makeM: ", parentField, n, cs, cs.toArray());
+                return cs.length === 0 ? 0 : Math.max.apply(null, cs.toArray()) + 1;
             });
         };
         return Trees;

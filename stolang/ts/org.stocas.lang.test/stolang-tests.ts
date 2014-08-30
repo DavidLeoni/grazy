@@ -9,69 +9,100 @@ module stolangTest {
     import Trees = stolang.Trees;
     import StoErr = stolang.StoErr;
     import Imm = Immutable;
+    import ImmOrdMap = Immutable.OrderedMap;
+    import ImmIndSeq = Immutable.IndexedSequence;
+    import ImmSeq = Immutable.Sequence;
+    import ImmVec = Immutable.Vector;
     import TestResult = stolang.test.TestResult;
     import TestSuite = stolang.test.TestSuite;
     import assertEquals = stolang.test.assertEquals;
-    import signal = stolang.signal;
+    import assertNotEquals = stolang.test.assertNotEquals;
+    import report = stolang.report;
   
-    var getCs = (n)=>n.cs ? <any[]> n.cs : [];
-    var sumCs = (n, mcs)=> mcs.length > 0 ?
-                                            mcs.reduce((acc:number, el : number)=>{
+    
+    
+    var getCs = (n)=> (n.cs ? ImmVec.from(n.cs) : ImmVec.empty());
+    var sumCs = (field, n, mcs : ImmSeq<any, number>) : number => mcs.length > 0 ?
+                                            mcs.reduce((acc:number, 
+                                                        el : number)=>{
                                                 console.log("acc = ", acc, "el = ", el);
                                                 return acc+el;
-                                            })
+                                            },0)
                                             : n;
     
     export var tests = {
         /** 'testMethodName' should be visualized in UI */
-        testMethodName : ()=>null, 
-        testEmptyTree() {
-            return assertEquals(Trees.fold({}, 
-                                (n) => [], 
-                                (n) => 3), 
-                                3);
+        testMethodName : ()=>null,
+        testAssertEquals_1 : ()=> {
+             var res = assertEquals(true, true);
+             if (res){
+                return new stolang.NotEqErr(new Error(), null, res);
+             } else {
+                 return null;                 
+             }
         },
-        // nodes can be either numbers or {cs:[...]}
-        testSumOneNodeTree(){
-            return assertEquals(Trees.fold({cs:[1,2]}, 
-                                (n)=>n.cs ? <any> n.cs : [],
-                                (n, mcs)=> mcs.length > 0 ?
-                                            mcs.reduce((acc:number, el : number)=>{
-                                                console.log("acc = ", acc, "el = ", el);
-                                                return acc+el;
-                                            })
-                                            : n),
-                                3);
+        testAssertEquals_2 : ()=> {
+             var res = assertEquals(true, false);
+             if (res){
+                return null;
+             } else {
+                 return new stolang.NotEqErr(new Error(),null, res);                 
+             }
+        },        
+         testAssertNotEquals_1 : ()=> {
+             var res = assertNotEquals(true, true);
+             if (res){
+                return null;                                
+             } else {                
+                return new stolang.EqErr(new Error(), res); 
+             }
         },
+        testAssertNotEquals_2 : ()=> {
+             var res = assertNotEquals(true, false);
+             if (res){
+                 return new stolang.NotEqErr(new Error(), null, res);                
+             } else {         
+                return null;
+             }
+        }, 
+
+        testGetCsType : ()=> assertNotEquals("array", $.type(getCs({cs:[1,2]}))),
+        testGetCsLength : ()=> assertEquals(2, getCs({cs:[1,2]}).length),
+        testGetCs_1 : ()=> assertEquals(1, getCs({cs:[1,2]}).first()),
+        testGetCs_2 : ()=> assertEquals(2, getCs({cs:[1,2]}).last()),
+        testEmptyTree : ()=> assertEquals(3, 
+                                Trees.fold({}, 
+                                (n) => Imm.Map.empty(), 
+                                (n) => 3)),
         // nodes can be either numbers or {cs:[...]}
-        testSumManyNodesTree_1(){
-            return assertEquals(Trees.fold({cs:[
+        testSumOneNodeTree : ()=> assertEquals(3, Trees.fold({cs:[1,2]}, 
+                                getCs,
+                                sumCs)),
+        // nodes can be either numbers or {cs:[...]}
+        testSumManyNodesTree_1 : () => assertEquals(1, 
+                                Trees.fold({cs:[
                                                 {cs:[1]}
                                                ]}, 
                                                 getCs,
-                                                sumCs),
-                                1);
-        },        
+                                                sumCs)),        
         
         // nodes can be either numbers or {cs:[...]}
-        testSumManyNodesTree_2(){
-            return assertEquals(Trees.fold({cs:[    
+        testSumManyNodesTree_2 : ()=> assertEquals(6,
+                                            Trees.fold({cs:[    
                                                 {cs:[1]},
                                                 {cs:[2,3]}
                                                ]}, 
-                                getCs,
-                                sumCs),
-                                6);
-        },
-        testHeight_0 : ()=>assertEquals(Trees.height(<any> {}, getCs), 0),
-        testHeight_1 : ()=>assertEquals(Trees.height(<any> {cs:[{}]}, getCs), 1),
-        testHeight_2 : ()=>assertEquals(Trees.height(<any> {cs:[{cs: [{}
+                                            getCs,
+                                            sumCs)),
+        testHeight_0 : ()=>assertEquals(0, Trees.height( {}, getCs)),
+        testHeight_1 : ()=>assertEquals(1, Trees.height( {cs:[{}]}, getCs)),
+        testHeight_2 : ()=>assertEquals(2, Trees.height( {cs:[{cs: [{}
                                                                      ]
-                                                                }]}, getCs), 2),
-        testHeight_3 : ()=>assertEquals(Trees.height(<any> {cs:[{cs: [{},
+                                                                }]}, getCs)),
+        testHeight_3 : ()=>assertEquals(3, Trees.height( {cs:[{cs: [{},
                                                                       {cs: [{}]}
                                                                      ]
-                                                                }]}, getCs), 3)     
+                                                                }]}, getCs))     
     }
 
   
@@ -138,7 +169,7 @@ module stolangTest {
                 .text("" + tr.testName + " : " + testStatus)
                 .on('click', () => {
                     if (tr.error) {
-                        tr.error.toConsole();
+                        tr.error.consoleError();
                     } else {
                         console.log(tr.testName + "code: ", tr.test);
                     }
@@ -176,7 +207,7 @@ module stolangTest {
             boxedTest[singleTestName] = tests[singleTestName];
             testSuite = new TestSuite(suiteName, boxedTest);             
         } else {
-            signal(new Error(), "There is no test called " + singleTestName + " !!! Defaulting to all tests.");
+            report(new Error(), "There is no test called " + singleTestName + " !!! Defaulting to all tests.");
             testSuite = new TestSuite(suiteName, tests);
         }
     } else {

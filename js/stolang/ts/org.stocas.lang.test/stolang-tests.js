@@ -7,18 +7,23 @@ var stolangTest;
 (function (stolangTest) {
     var Trees = stolang.Trees;
 
+    var Imm = Immutable;
+
+    var ImmVec = Immutable.Vector;
+
     var TestSuite = stolang.test.TestSuite;
     var assertEquals = stolang.test.assertEquals;
-    var signal = stolang.signal;
+    var assertNotEquals = stolang.test.assertNotEquals;
+    var report = stolang.report;
 
     var getCs = function (n) {
-        return n.cs ? n.cs : [];
+        return (n.cs ? ImmVec.from(n.cs) : ImmVec.empty());
     };
-    var sumCs = function (n, mcs) {
+    var sumCs = function (field, n, mcs) {
         return mcs.length > 0 ? mcs.reduce(function (acc, el) {
             console.log("acc = ", acc, "el = ", el);
             return acc + el;
-        }) : n;
+        }, 0) : n;
     };
 
     stolangTest.tests = {
@@ -26,57 +31,94 @@ var stolangTest;
         testMethodName: function () {
             return null;
         },
+        testAssertEquals_1: function () {
+            var res = assertEquals(true, true);
+            if (res) {
+                return new stolang.NotEqErr(new Error(), null, res);
+            } else {
+                return null;
+            }
+        },
+        testAssertEquals_2: function () {
+            var res = assertEquals(true, false);
+            if (res) {
+                return null;
+            } else {
+                return new stolang.NotEqErr(new Error(), null, res);
+            }
+        },
+        testAssertNotEquals_1: function () {
+            var res = assertNotEquals(true, true);
+            if (res) {
+                return null;
+            } else {
+                return new stolang.EqErr(new Error(), res);
+            }
+        },
+        testAssertNotEquals_2: function () {
+            var res = assertNotEquals(true, false);
+            if (res) {
+                return new stolang.NotEqErr(new Error(), null, res);
+            } else {
+                return null;
+            }
+        },
+        testGetCsType: function () {
+            return assertNotEquals("array", $.type(getCs({ cs: [1, 2] })));
+        },
+        testGetCsLength: function () {
+            return assertEquals(2, getCs({ cs: [1, 2] }).length);
+        },
+        testGetCs_1: function () {
+            return assertEquals(1, getCs({ cs: [1, 2] }).first());
+        },
+        testGetCs_2: function () {
+            return assertEquals(2, getCs({ cs: [1, 2] }).last());
+        },
         testEmptyTree: function () {
-            return assertEquals(Trees.fold({}, function (n) {
-                return [];
+            return assertEquals(3, Trees.fold({}, function (n) {
+                return Imm.Map.empty();
             }, function (n) {
                 return 3;
-            }), 3);
+            }));
         },
         // nodes can be either numbers or {cs:[...]}
         testSumOneNodeTree: function () {
-            return assertEquals(Trees.fold({ cs: [1, 2] }, function (n) {
-                return n.cs ? n.cs : [];
-            }, function (n, mcs) {
-                return mcs.length > 0 ? mcs.reduce(function (acc, el) {
-                    console.log("acc = ", acc, "el = ", el);
-                    return acc + el;
-                }) : n;
-            }), 3);
+            return assertEquals(3, Trees.fold({ cs: [1, 2] }, getCs, sumCs));
         },
         // nodes can be either numbers or {cs:[...]}
         testSumManyNodesTree_1: function () {
-            return assertEquals(Trees.fold({ cs: [
+            return assertEquals(1, Trees.fold({ cs: [
                     { cs: [1] }
-                ] }, getCs, sumCs), 1);
+                ] }, getCs, sumCs));
         },
         // nodes can be either numbers or {cs:[...]}
         testSumManyNodesTree_2: function () {
-            return assertEquals(Trees.fold({ cs: [
+            return assertEquals(6, Trees.fold({ cs: [
                     { cs: [1] },
                     { cs: [2, 3] }
-                ] }, getCs, sumCs), 6);
+                ] }, getCs, sumCs));
         },
         testHeight_0: function () {
-            return assertEquals(Trees.height({}, getCs), 0);
+            return assertEquals(0, Trees.height({}, getCs));
         },
         testHeight_1: function () {
-            return assertEquals(Trees.height({ cs: [{}] }, getCs), 1);
+            return assertEquals(1, Trees.height({ cs: [{}] }, getCs));
         },
         testHeight_2: function () {
-            return assertEquals(Trees.height({ cs: [{
+            return assertEquals(2, Trees.height({ cs: [{
                         cs: [
                             {}
                         ]
-                    }] }, getCs), 2);
+                    }] }, getCs));
         },
         testHeight_3: function () {
-            return assertEquals(Trees.height({ cs: [{
+            return assertEquals(3, Trees.height({ cs: [{
                         cs: [
                             {},
                             { cs: [{}] }
                         ]
-                    }] }, getCs), 3);
+                    }] }, getCs));
         }
     };
 
@@ -124,7 +166,7 @@ var stolangTest;
 
             targetDiv.append($('<span>').addClass(styleClass).text("" + tr.testName + " : " + testStatus).on('click', function () {
                 if (tr.error) {
-                    tr.error.toConsole();
+                    tr.error.consoleError();
                 } else {
                     console.log(tr.testName + "code: ", tr.test);
                 }
@@ -155,7 +197,7 @@ var stolangTest;
             boxedTest[singleTestName] = stolangTest.tests[singleTestName];
             testSuite = new TestSuite(suiteName, boxedTest);
         } else {
-            signal(new Error(), "There is no test called " + singleTestName + " !!! Defaulting to all tests.");
+            report(new Error(), "There is no test called " + singleTestName + " !!! Defaulting to all tests.");
             testSuite = new TestSuite(suiteName, stolangTest.tests);
         }
     } else {

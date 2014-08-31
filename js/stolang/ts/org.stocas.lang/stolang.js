@@ -220,112 +220,106 @@ var stolang;
         function Trees() {
         }
         /**
-        * Eagerly applies function makeM to
+        * Recursively applies function makeM to a node of type N and
+        * M-fied children of type M, so the resulting tree will have type M
         * @param getChildren leaf nodes have zero children
         * @param makeM function that takes node to M-ify,
         *        the field name (or index) that was holding it
         *        and its now M-fied children
         */
         Trees.fold = function (rootNode, getChildren, makeM) {
-            console.log("Trees.fold begin ");
+            var processedNodesCounter = 0;
 
             /** Holds original nodes */
             var stack1 = [{
-                    parentField: null,
-                    node: rootNode }];
+                    key: null,
+                    node: rootNode
+                }];
 
             /** Holds nodes-as-expressions that still need to be completely filled with
             M-fied children */
             var stack2 = [];
 
             /**
-            inserts node to existing children. If children list is full,
-            resolves expressions popping nodes in stack2 until meets a list
-            with not enough children.
+            Inserts node to existing children container in top entry of stack2.
+            If inserting the node fills the children container,
+            resolves expressions popping nodes in stack2. If stack2 gets empty
+            returns last calculated expression, otherwise return null.
             */
-            var nodeToStack2 = function (fieldToInsert, node) {
-                console.log("nodeToStack2 stack1 = ", stack1, " stack2 ", stack2);
-
-                var toInsert = makeM(fieldToInsert, node, ImmOrdMap.empty());
-
-                // todo remove debugging stuff
-                if (toInsert.cs) {
-                    console.error("toInsert: ", toInsert);
-                    throw new Error("Found cs in toInsert!");
-                }
-                console.log("toInsert before while stack2.length > 0: ", toInsert);
+            var nodeToStack2 = function (key, node) {
+                var toInsert = makeM(key, node, ImmOrdMap.empty());
+                var curKey = key;
 
                 while (stack2.length > 0) {
                     var top2 = stack2[0];
-                    top2.children.unshift([fieldToInsert, toInsert]);
-                    if (toInsert.cs) {
-                        console.error("toInsert: ", toInsert);
-                        throw new Error("Found cs to insert!!");
+
+                    top2.children.unshift([curKey, toInsert]);
+
+                    if (top2.children.length > top2.neededChildren) {
+                        throw new StoErr(new Error(), "Found more children in top2 than the needed ones!", "stack1: ", stack1, "top2 =", top2, "stack2: ", stack2);
                     }
-                    console.log("inserted in top2: ", toInsert);
-                    console.log("top2.children.length ", top2.children.length);
-                    console.log("top2.children ", top2.children);
 
-                    if (top2.neededChildren == top2.children.length) {
-                        var shiftedTop2 = stack2.shift();
-                        console.log("shiftedTop2 = ", shiftedTop2);
+                    if (top2.neededChildren === top2.children.length) {
+                        stack2.shift();
 
-                        toInsert = makeM(fieldToInsert, shiftedTop2.node, ImmOrdMap.from(shiftedTop2.children));
+                        toInsert = makeM(top2.key, top2.node, ImmOrdMap.from(top2.children));
+                        curKey = top2.key;
                     } else {
-                        return toInsert;
+                        return null;
                     }
-                    if (toInsert.cs) {
-                        console.error("toInsert: ", toInsert);
-                        throw new Error("Found cs to insert!!");
-                    }
-                    console.log("toInsert end of while stack2.length > 0: ", toInsert);
                 }
 
-                console.log("toInsert after while stack2.length > 0: ", toInsert);
                 return toInsert;
             };
 
             var ret;
 
-            console.log("before while stack1.length > 0:  stack1 = ", stack1, " stack2 ", stack2);
             while (stack1.length > 0) {
-                console.log("while stack1.length > 0:  stack1 = ", stack1, " stack2 ", stack2);
-                var el = stack1.pop();
+                var el = stack1.shift();
 
                 var children = getChildren(el.node);
 
-                // non-leaf node
                 if (children.length === 0) {
-                    ret = nodeToStack2(el.parentField, el.node);
-                    if (stack2.length === 0) {
-                        if (stack1.length > 0) {
-                            throw new StoErr(new Error(), "There are still elements in stack1: ", stack1);
+                    ret = nodeToStack2(el.key, el.node);
+                    if (stack1.length === 0) {
+                        if (stack2.length > 0) {
+                            throw new StoErr(new Error(), "Found non-empty stack2: ", stack2);
                         }
                         return ret;
+                    } else {
+                        if (stack2.length === 0) {
+                            return ret;
+                        } else {
+                            if (ret) {
+                                throw new StoErr(new Error(), "ret should be null, found instead ", ret);
+                            }
+                        }
                     }
                 } else {
                     children.forEach(function (c, k) {
                         stack1.unshift({
                             node: c,
-                            parentField: k });
+                            key: k
+                        });
                     });
                     var childrenContainer = [];
-                    stack2.unshift({
+                    var toStack2 = {
                         node: el.node,
-                        parentField: el.parentField,
+                        key: el.key,
                         neededChildren: children.length,
                         children: childrenContainer
-                    });
+                    };
+                    stack2.unshift(toStack2);
                 }
             }
 
             throw new Error("Shouldn't arrive till here...");
+
             return makeM(null, null, null);
         };
 
         Trees.height = function (node, getChildren) {
             return Trees.fold(node, getChildren, function (parentField, n, cs) {
-                console.log("inside makeM: ", parentField, n, cs, cs.toArray());
                 return cs.length === 0 ? 0 : Math.max.apply(null, cs.toArray()) + 1;
             });
         };

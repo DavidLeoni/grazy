@@ -20,8 +20,8 @@ var stolangTest;
         return (n.cs ? ImmVec.from(n.cs) : ImmVec.empty());
     };
     var sumCs = function (field, n, mcs) {
+        console.log("inside sumCs  makeM: ", "parentField: ", field, "n: ", n, "cs: ", mcs, "mcs.toArray(): ", mcs.toArray());
         return mcs.length > 0 ? mcs.reduce(function (acc, el) {
-            console.log("acc = ", acc, "el = ", el);
             return acc + el;
         }, 0) : n;
     };
@@ -88,16 +88,20 @@ var stolangTest;
         },
         // nodes can be either numbers or {cs:[...]}
         testSumManyNodesTree_1: function () {
-            return assertEquals(1, Trees.fold({ cs: [
+            return assertEquals(1, Trees.fold({
+                cs: [
                     { cs: [1] }
-                ] }, getCs, sumCs));
+                ]
+            }, getCs, sumCs));
         },
         // nodes can be either numbers or {cs:[...]}
         testSumManyNodesTree_2: function () {
-            return assertEquals(6, Trees.fold({ cs: [
+            return assertEquals(6, Trees.fold({
+                cs: [
                     { cs: [1] },
                     { cs: [2, 3] }
-                ] }, getCs, sumCs));
+                ]
+            }, getCs, sumCs));
         },
         testHeight_0: function () {
             return assertEquals(0, Trees.height({}, getCs));
@@ -106,19 +110,23 @@ var stolangTest;
             return assertEquals(1, Trees.height({ cs: [{}] }, getCs));
         },
         testHeight_2: function () {
-            return assertEquals(2, Trees.height({ cs: [{
+            return assertEquals(2, Trees.height({
+                cs: [{
                         cs: [
                             {}
                         ]
-                    }] }, getCs));
+                    }]
+            }, getCs));
         },
         testHeight_3: function () {
-            return assertEquals(3, Trees.height({ cs: [{
+            return assertEquals(3, Trees.height({
+                cs: [{
                         cs: [
                             {},
                             { cs: [{}] }
                         ]
-                    }] }, getCs));
+                    }]
+            }, getCs));
         }
     };
 

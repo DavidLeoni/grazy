@@ -49,7 +49,7 @@ declare module Rdfstore {
         node(nodeURI: string, callback: (success, graph) => void);
         node(nodeURI : string, graphUri:string, callback: (success, graph)=>void);
 
-    } */ 
+    } */
     export interface Store {
         rdf: any;
         execute: any;
@@ -66,7 +66,7 @@ declare var rdfstore: Rdfstore.Base;
 
 module stolang {
     import Imm = Immutable;
-    import ImmOrdMap = Immutable.OrderedMap;    
+    import ImmOrdMap = Immutable.OrderedMap;
     import ImmSeq = Immutable.Sequence;
     export var STOCAS_PREFIX = "stocas";
     export var STOCAS_IRI = "https://github.com/davidleoni/stocas/";
@@ -78,16 +78,16 @@ module stolang {
         var factoryFunction = constr.bind.apply(constr, arguments);
         return new factoryFunction();
     };
-    
+
     /**
      * Usage: applyToConstructor(MyConstructor, [arg1, arg2]); 
-     */    
+     */
     export var applyToConstructor = function(constr, argArray) {
         var args = [null].concat(argArray);
         var factoryFunction = constr.bind.apply(constr, args);
         return new factoryFunction();
     };
-    
+
     /**
      * This class encapsulates Javascript Error object. It doesn't extend it because all the error inheritance stuff 
      * in Javascript is really fucked up. 
@@ -150,12 +150,12 @@ module stolang {
     export class EqErr extends StoErr {
         constructor(error: Error, actual) {
             super(error, "Failed assertion!",
-                "  Expected something different than ->", actual, "<-\n");                            
+                "  Expected something different than ->", actual, "<-\n");
             this.actual = actual;
         }
-        actual: any;        
-    }    
-    
+        actual: any;
+    }
+
     export class NotEqErr extends StoErr {
         constructor(error: Error, expected, actual) {
             super(error, "Failed assertion!",
@@ -167,40 +167,40 @@ module stolang {
         actual: any;
         expected: any;
     }
-        
-    
+
+
     /**
      * Takes a variable number of arguments and displays them as concatenated strings in an alert message, plus it calls console.error with the same arguments. Usage example:
      * signal(new Error(), "We got a problem", "Expected: ", 3, " got:", 2 + 2); 
      * @returns {StoErr}
      */
-    export var report = function(error : Error, ...args) {        
+    export var report = function(error: Error, ...args) {
         var i;
-        var arr = [];        
+        var arr = [];
         for (i = 0; i < arguments.length; i++) {
             arr.push(arguments[i]);
-        }        
+        }
         var exc = applyToConstructor(StoErr, arr);
-        
+
         exc.toConsole();
-        alert(exc.toString() + "\n\nLook in the console for more details." );
+        alert(exc.toString() + "\n\nLook in the console for more details.");
         return exc;
     };
-    
-    
-    
+
+
+
     /**
      * Visits nodes of type N and outputs type M
      */
-    export interface TreeVisitor<N, M> {        
+    export interface TreeVisitor<N, M> {
         getChildren(t: N): Imm.Sequence<N, number>;
     }
 
 
 
 
-    export module test {           
-        
+    export module test {
+
         /**
          * Returns EqErr in case actual is equals to notExpected.
          * Doesn't throw any exception
@@ -213,8 +213,8 @@ module stolang {
             } else {
                 return null;
             };
-        };        
-        
+        };
+
         /**
          * Doesn't throw any exception, 
          * @return null if no error occurred
@@ -242,12 +242,12 @@ module stolang {
 
         export class TestSuite {
             tests: any;
-            name : string;
+            name: string;
             testResults: TestResult[];
             passedTests: TestResult[];
             failedTests: TestResult[];
 
-            constructor (name : string, tests) {
+            constructor(name: string, tests) {
                 this.testResults = [];
                 this.passedTests = [];
                 this.failedTests = [];
@@ -289,24 +289,29 @@ module stolang {
 
     export class Trees {
         /**
-         * Eagerly applies function makeM to 
+         * Recursively applies function makeM to a node of type N and 
+         * M-fied children of type M, so the resulting tree will have type M  
          * @param getChildren leaf nodes have zero children
          * @param makeM function that takes node to M-ify,
          *        the field name (or index) that was holding it 
          *        and its now M-fied children 
          */
-        static fold<N, M>(rootNode: N,            
-                          getChildren: (t: N) => Imm.Sequence<any,N>,
-                          makeM: (field, t: N, children: Imm.Sequence<any,M>) => M): M {
-            console.log("Trees.fold begin ");
-            
+        static fold<N, M>(rootNode: N,
+            getChildren: (t: N) => Imm.Sequence<any, N>,
+            makeM: (field, t: N, children: Imm.Sequence<any, M>) => M): M {          
+
+            var processedNodesCounter = 0;
+
             /** Holds original nodes */
-            var stack1 = [{ parentField : null, 
-                            node : rootNode}]; // only rootNode should have null as key
-            
+            var stack1 = [{
+                key: null,
+                node: rootNode
+            }]; // only rootNode should have null as key
+
             /** Holds nodes-as-expressions that still need to be completely filled with
-              M-fied children */  
+              M-fied children */
             var stack2: {
+                key: any; 
                 node: N;
                 neededChildren: number;
                 children: any[]; //[<any, M>]               
@@ -314,104 +319,105 @@ module stolang {
 
 
             /**
-                inserts node to existing children. If children list is full,
-                resolves expressions popping nodes in stack2 until meets a list 
-                with not enough children.  
+                Inserts node to existing children container in top entry of stack2. 
+                If inserting the node fills the children container,
+                resolves expressions popping nodes in stack2. If stack2 gets empty 
+                returns last calculated expression, otherwise return null.
             */
-            var nodeToStack2 = (fieldToInsert : any, node: N): M => {
-                console.log("nodeToStack2 stack1 = ", stack1, " stack2 ", stack2);                
-                
-                
-                
-                var toInsert = makeM(fieldToInsert, 
-                                     node, 
-                                     ImmOrdMap.empty<any, M>());
-                 
-                // todo remove debugging stuff
-                if ((<any> toInsert).cs){
-                    console.error("toInsert: ", toInsert);
-                    throw new Error("Found cs in toInsert!");
-                }                
-                console.log("toInsert before while stack2.length > 0: ", toInsert);
+            var nodeToStack2 = (key: any, node: N): M => {
+
+                var toInsert = makeM(key,
+                    node,
+                    ImmOrdMap.empty<any, M>());
+                var curKey = key;
                 
                 while (stack2.length > 0) {
 
                     var top2 = stack2[0];
-                    top2.children.unshift([fieldToInsert, toInsert]);                    
-                    if ((<any>toInsert).cs){
-                        console.error("toInsert: ", toInsert);
-                        throw new Error("Found cs to insert!!");
-                    }
-                    console.log("inserted in top2: ", toInsert);
-                    console.log("top2.children.length ", top2.children.length);
-                    console.log("top2.children ", top2.children);
-                    
-                    if (top2.neededChildren == top2.children.length) {
-                        var shiftedTop2 = stack2.shift();
-                        console.log("shiftedTop2 = ", shiftedTop2);
-                                       
-                        toInsert = makeM(fieldToInsert, shiftedTop2.node, ImmOrdMap.from(shiftedTop2.children));                        
-                    } else {
-                        return toInsert;
-                    }
-                    if ((<any>toInsert).cs){
-                        console.error("toInsert: ", toInsert);
-                        throw new Error("Found cs to insert!!");
-                    }
-                    console.log("toInsert end of while stack2.length > 0: ", toInsert);
-                }
-                
-                console.log("toInsert after while stack2.length > 0: ", toInsert);
-                return toInsert;
 
+                    top2.children.unshift([curKey, toInsert]);
+                    
+                    if (top2.children.length > top2.neededChildren) {
+                        throw new StoErr(new Error(), "Found more children in top2 than the needed ones!",
+                            "stack1: ", stack1, "top2 =", top2, "stack2: ", stack2);
+                    }
+
+                    if (top2.neededChildren === top2.children.length) {
+                        stack2.shift();
+
+
+                        toInsert = makeM(top2.key, top2.node, ImmOrdMap.from(top2.children));
+                        curKey = top2.key;
+                    } else {
+                        return null;
+                    }
+            
+                }
+
+               
+                return toInsert; // stack2.length = 0
+               
             }
 
             var ret: M;
+
             
-            console.log("before while stack1.length > 0:  stack1 = ", stack1, " stack2 ", stack2);
             while (stack1.length > 0) {
-                console.log("while stack1.length > 0:  stack1 = ", stack1, " stack2 ", stack2);
-                var el = stack1.pop();
                 
+                var el = stack1.shift();
+
                 var children = getChildren(el.node);
 
-                // non-leaf node                                                
-                if (children.length === 0) {
-                    ret = nodeToStack2(el.parentField, el.node);
-                    if (stack2.length === 0) {
-                        if (stack1.length > 0){
-                            throw new StoErr(new Error(), "There are still elements in stack1: ", stack1);
-                        }                    
+
+                if (children.length === 0) { // leaf node
+                    ret = nodeToStack2(el.key, el.node);
+                    if (stack1.length === 0) {                                       
+                        if (stack2.length > 0){
+                            throw new StoErr(new Error(), "Found non-empty stack2: ", stack2); 
+                        }
                         return ret;
+                    } else {
+                        if (stack2.length === 0){
+                            return ret;
+                        } else {
+                            if (ret){
+                                throw new StoErr(new Error(), "ret should be null, found instead ", ret);
+                            }
+                        }                                     
                     }
-                } else {                
-                    children.forEach(( c, k) => {
-                        stack1.unshift({node : c, 
-                            parentField : k});
+                } else {  // non-leaf nosde               
+                    children.forEach((c, k) => {
+                        stack1.unshift({
+                            node: c,
+                            key: k
+                        });
                     });
                     var childrenContainer = [];
-                    stack2.unshift({
-                        node: el.node,                        
-                        parentField : el.parentField,
+                    var toStack2 = {
+                        node: el.node,
+                        key: el.key,
                         neededChildren: children.length,
-                        children: childrenContainer 
-                    });
+                        children: childrenContainer
+                    };
+                    stack2.unshift(toStack2);
                 }
 
             }
 
             throw new Error("Shouldn't arrive till here...");
-            return makeM(null, null,null);
+                                       
+            return makeM(null, null, null);
         }
-        
-        static height<N>(node : N, 
-                        getChildren: (t: N) => Imm.Sequence<any, N>) : number{
-            return Trees.fold(node, getChildren, (parentField, n, cs:ImmSeq<any, number>)
-                                                 => {console.log("inside makeM: ", parentField, n, cs, cs.toArray());
-                                                    return cs.length === 0 ? 
-                                                      0
-                                                    : Math.max.apply(null, cs.toArray()) + 1;})
-        }        
+
+        static height<N>(node: N,
+            getChildren: (t: N) => Imm.Sequence<any, N>): number {
+            return Trees.fold(node, getChildren, (parentField, n, cs: ImmSeq<any, number>)
+                => {                
+                return cs.length === 0 ?
+                    0
+                    : Math.max.apply(null, cs.toArray()) + 1;
+            })
+        }
 
     }
 

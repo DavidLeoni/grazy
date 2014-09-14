@@ -8,7 +8,7 @@
     }
     interface IRegisterPromiseContinuations extends IRegisterPromiseSpecificationContinuations {
         (onFulfilled?: IPromiseContinuation, onRejected?: IPromiseContinuation): IPromise;
-    }
+    } 
     interface IRegisterPromiseSpecificationContinuations {
         (onFulfilled?: IPromiseContinuation, onRejected?: IPromiseContinuation): ISpecificationPromise;
     }

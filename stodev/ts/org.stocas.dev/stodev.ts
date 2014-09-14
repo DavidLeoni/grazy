@@ -2,20 +2,18 @@
 
 
 
-declare var stodev: StoDev;
+export var stodev: StoDev;
 
-class StoDev {
+export class StoDev {
 
-    private static singleton: StoDev;
+    private static _singleton: StoDev;
 
     element: HTMLElement;
     span: HTMLElement;
     timerToken: number;
     editor: stovis.Editor;
-
+     
     
-
-    // if I make it private getSingleton complains, why??
     constructor(element: HTMLElement) {
         console.log("Creating StoDev...");
         this.element = element;        
@@ -24,11 +22,12 @@ class StoDev {
     }
       
 
-    static getSingleton(element: HTMLElement): StoDev {
-        if (!StoDev.singleton) {
-            StoDev.singleton = new StoDev(element);            
+    static singleton(element: HTMLElement): StoDev {
+        if (!StoDev._singleton) {
+            console.log("No StoDev singleton found. Creating a new one...");
+            StoDev._singleton = new StoDev(element);            
         } 
-        return StoDev.singleton;
+        return StoDev._singleton;
         
     }
 
@@ -36,5 +35,5 @@ class StoDev {
 
 window.onload = () => {
     var el = document.getElementById('content');
-    stodev = StoDev.getSingleton(el);   
+    stodev = StoDev.singleton(el);   
 };

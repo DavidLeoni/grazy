@@ -1,4 +1,5 @@
 /// <reference path="../../js/com.facebook.immutable/immutable.d.ts" />
+/// <reference path="../../js/promisespromises/Promises.d.ts" />
 
 
 declare module Rdfstore {
@@ -67,6 +68,7 @@ module stolang {
     import Imm = Immutable;
     import ImmOrdMap = Immutable.OrderedMap;
     import ImmSeq = Immutable.Sequence;
+    
     export var STOCAS_PREFIX = "stocas";
     export var STOCAS_IRI = "https://github.com/davidleoni/stocas/";
 

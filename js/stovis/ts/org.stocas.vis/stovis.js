@@ -385,6 +385,38 @@ var stovis;
         };
 
         /**
+        Adds an empty rectangle body of specified type (so it's actually made of 4 slim boxes)
+        Shape will be strictly contained inside the provided bounds. A margin of this.thickness
+        will separate the shapes from the provided bounds.
+        type can be either dynamic, static, kinematic
+        */
+        Editor.prototype.addEmptyRect = function (type, posx, posy, width, height) {
+            var i;
+            var horizRects = 1;
+            var vertRects = 1;
+
+            var border = this.phys2D.createRigidBody({
+                type: 'static'
+            });
+
+            for (i = 0; i <= horizRects; i += 1) {
+                var x = ((width - this.thickness * 2) / horizRects) * i;
+                border.addShape(this.phys2D.createPolygonShape({
+                    vertices: this.phys2D.createRectangleVertices(posx + x + this.thickness, posy + this.thickness * 2, posx + x + this.thickness * 2, posy + height - this.thickness * 2)
+                }));
+            }
+
+            for (i = 0; i <= vertRects; i += 1) {
+                var y = ((height - this.thickness * 2) / vertRects) * i;
+                border.addShape(this.phys2D.createPolygonShape({
+                    vertices: this.phys2D.createRectangleVertices(posx + this.thickness * 2, posy + y + this.thickness, posx + width - this.thickness * 2, posy + y + this.thickness * 2)
+                }));
+            }
+
+            this.world.addRigidBody(border);
+        };
+
+        /**
         Adds a tree inside rect area, which MUST be empty. Todo make it auto-enlargable. Nodes of the tree are specified by treeObj.
         For each key in the object, a new node is created. Nodes IRI must be present in "@id" field, and they must all be not be present in the db.
         @return Returns the root node.
@@ -518,27 +550,7 @@ var stovis;
             this.world.clear();
             this.handConstraint = null;
 
-            // Create a static body around the stage to stop objects leaving the viewport.
-            // And walls between each constraint section.
-            var border = this.phys2D.createRigidBody({
-                type: 'static'
-            });
-
-            var i;
-            for (i = 0; i <= 4; i += 1) {
-                var x = (this.stageWidth / 4) * i;
-                border.addShape(this.phys2D.createPolygonShape({
-                    vertices: this.phys2D.createRectangleVertices(x - this.thickness, 0, x + this.thickness, this.stageHeight)
-                }));
-            }
-            for (i = 0; i <= 2; i += 1) {
-                var y = (this.stageHeight / 2) * i;
-                border.addShape(this.phys2D.createPolygonShape({
-                    vertices: this.phys2D.createRectangleVertices(0, y - this.thickness, this.stageWidth, y + this.thickness)
-                }));
-            }
-
-            this.world.addRigidBody(border);
+            this.addEmptyRect("static", 0, 0, this.stageWidth, this.stageHeight);
 
             var bodyA, bodyB, worldAnchor;
 
@@ -560,62 +572,6 @@ var stovis;
             });
 
             console.log("visStore2 = ", this.visStore);
-
-            // ------------------------------------
-            // Weld Constraint
-            bodyA = this.circle(13.3, 5, 1);
-            bodyB = this.circle(16.6, 5, 1);
-
-            worldAnchor = [15, 5];
-            var weldConstraint = this.phys2D.createWeldConstraint({
-                bodyA: bodyA,
-                bodyB: bodyB,
-                anchorA: bodyA.transformWorldPointToLocal(worldAnchor),
-                anchorB: bodyB.transformWorldPointToLocal(worldAnchor),
-                phase: 0,
-                stiff: (!this.elasticConstraints),
-                frequency: this.frequency,
-                damping: this.damping
-            });
-            this.world.addConstraint(weldConstraint);
-
-            // ------------------------------------
-            // Distance Constraint
-            bodyA = this.circle(23.3, 5, 1);
-            bodyB = this.circle(26.6, 5, 1);
-
-            var distanceConstraint = this.phys2D.createDistanceConstraint({
-                bodyA: bodyA,
-                bodyB: bodyB,
-                anchorA: [1, 0],
-                anchorB: [-1, 0],
-                lowerBound: 1,
-                upperBound: 3,
-                stiff: (!this.elasticConstraints),
-                frequency: this.frequency,
-                damping: this.damping
-            });
-            this.world.addConstraint(distanceConstraint);
-
-            // ------------------------------------
-            // Line Constraint
-            bodyA = this.circle(33.3, 5, 1);
-            bodyB = this.circle(36.6, 5, 1);
-
-            worldAnchor = [35, 5];
-            var lineConstraint = this.phys2D.createLineConstraint({
-                bodyA: bodyA,
-                bodyB: bodyB,
-                anchorA: bodyA.transformWorldPointToLocal(worldAnchor),
-                anchorB: bodyB.transformWorldPointToLocal(worldAnchor),
-                axis: [0, 1],
-                lowerBound: -1,
-                upperBound: 1,
-                stiff: (!this.elasticConstraints),
-                frequency: this.frequency,
-                damping: this.damping
-            });
-            this.world.addConstraint(lineConstraint);
         };
 
         Editor.prototype.invalidateConstraints = function () {
@@ -763,20 +719,8 @@ var stovis;
             this.graphicsDevice.setTechniqueParameters(this.fontTechniqueParameters);
 
             var titleHeight = 0.75;
-            this.segmentFont(0, 0, "Tree Layout", titleHeight);
-            this.segmentFont(3.2, 9, "A", 1.0);
+            this.segmentFont(0, 0, "Test Layout", titleHeight);
 
-            /*
-            segmentFont(10, 0, "Weld", titleHeight);
-            segmentFont(20, 0, "Distance", titleHeight);
-            segmentFont(30, 0, "Line", titleHeight);
-            segmentFont(0, 10, "Angle", titleHeight);
-            segmentFont(10, 10, "Motor", titleHeight);
-            segmentFont(20, 10, "Pulley", titleHeight);
-            segmentFont(30, 10, "Custom", titleHeight);
-            this.segmentFont(pos[0], pos[1], node.label, radius);
-            
-            */
             this.graphicsDevice.endFrame();
         };
 

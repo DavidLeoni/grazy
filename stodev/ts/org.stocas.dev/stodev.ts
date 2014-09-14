@@ -2,9 +2,9 @@
 
 
 
-export var stodev: StoDev;
-
-export class StoDev {
+var stodev: StoDev;
+ 
+class StoDev {
 
     private static _singleton: StoDev;
 

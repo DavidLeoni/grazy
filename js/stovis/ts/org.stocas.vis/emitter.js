@@ -1,8 +1,4 @@
 // Copyright (c) 2010-2012 Turbulenz Limited
-
-/*global Geometry: false*/
-/*global GeometryInstance: false*/
- 
 /// <reference path="../../js/biz.turbulenz/jslib-modular/turbulenz.d.ts" />
 /// <reference path="../../js/biz.turbulenz/jslib-modular/servicedatatypes.d.ts" />
 /// <reference path="../../js/biz.turbulenz/jslib-modular/services.d.ts" />
@@ -11,63 +7,22 @@
 /// <reference path="../../js/biz.turbulenz/jslib-modular/jsengine.d.ts" />
 /// <reference path="../../js/biz.turbulenz/jslib-modular/fontmanager.d.ts" />
 /// <reference path="../../js/biz.turbulenz/jslib-modular/utilities.d.ts" />
-
 /// <reference path="../../js/biz.turbulenz/jslib-modular/tzdraw2d.d.ts" />
 /// <reference path="../../js/biz.turbulenz/jslib-modular/physics2d.d.ts" />
 /// <reference path="htmlcontrols.ts" />
-
-interface Particle
-{
-    velocity    : any; // v3
-    position    : any; // v3
-    dieTime     : number;
-    size        : number;
-    color       : any; // v4
-    invlifeTime : number;
-};
+;
 
 //
 //  ParticleSystem Object
 //
-class ParticleSystem
-{
-    static version = 1;
-
-    md                 : MathDevice;
-    numActiveParticles : number;
-    spawnNextParticle  : number;
-    worldPosition      : any; // v3
-    particles          : Particle[];
-    dirtyWorldExtents  : boolean;
-    colorList          : any[]; // v4[]
-    v3temp             : any; // v3
-    extents            : Float32Array;
-
-    maxSpawnTime       : number;
-    minSpawnTime       : number;
-    diffSpawnTime      : number;
-
-    maxLifetime        : number;
-    minLifetime        : number;
-    diffLifetime       : number;
-
-    size               : number;
-    growRate           : number;
-    maxParticles       : number;
-    gravity            : number;
-
-    geometryInstance   : GeometryInstance;
-
-    // on prototype
-    indexBuffer        : IndexBuffer;
-
-    setWorldPosition(worldPosition)
-    {
-        this.worldPosition = worldPosition;
+var ParticleSystem = (function () {
+    function ParticleSystem() {
     }
+    ParticleSystem.prototype.setWorldPosition = function (worldPosition) {
+        this.worldPosition = worldPosition;
+    };
 
-    createParticle(particle)
-    {
+    ParticleSystem.prototype.createParticle = function (particle) {
         var md = this.md;
         var random = Math.random;
         var worldPosition = this.worldPosition;
@@ -89,7 +44,7 @@ class ParticleSystem
 
         // Select a random velocity variation
         velocity[0] = -2 + random() * 4;
-        velocity[1] =  6 + random() * 4;
+        velocity[1] = 6 + random() * 4;
         velocity[2] = -2 + random() * 4;
 
         particle.size = this.size;
@@ -99,10 +54,9 @@ class ParticleSystem
 
         // Set the next particle spawn time
         this.spawnNextParticle = spawnTime + this.minSpawnTime + (random() * this.diffSpawnTime);
-    }
+    };
 
-    initialize()
-    {
+    ParticleSystem.prototype.initialize = function () {
         var md = this.md;
         var maxParticles = this.maxParticles;
         var particles = this.particles;
@@ -110,18 +64,16 @@ class ParticleSystem
         var v3Zero = md.v3BuildZero();
         var v4One = md.v4BuildOne();
 
-        for (var i = 0; i < maxParticles; i += 1)
-        {
-            particles[i] = <Particle> {
-                velocity : v3Zero.slice(),
-                position : v3Zero.slice(),
-                color : v4One.slice()
+        for (var i = 0; i < maxParticles; i += 1) {
+            particles[i] = {
+                velocity: v3Zero.slice(),
+                position: v3Zero.slice(),
+                color: v4One.slice()
             };
         }
-    }
+    };
 
-    update(currentTime, deltaTime)
-    {
+    ParticleSystem.prototype.update = function (currentTime, deltaTime) {
         var md = this.md;
         var numActiveParticles = this.numActiveParticles;
         var particles = this.particles;
@@ -133,43 +85,33 @@ class ParticleSystem
         var i = 0;
 
         // clamp for missing updates
-        if ((this.spawnNextParticle + deltaTime) < currentTime)
-        {
+        if ((this.spawnNextParticle + deltaTime) < currentTime) {
             this.spawnNextParticle = (currentTime - deltaTime);
         }
 
-        while (i < numActiveParticles)
-        {
+        while (i < numActiveParticles) {
             var p = particles[i];
             var dieTime = p.dieTime;
-            if (dieTime < currentTime)
-            {
-                if (this.spawnNextParticle < currentTime)
-                {
+            if (dieTime < currentTime) {
+                if (this.spawnNextParticle < currentTime) {
                     this.createParticle(p);
 
                     dirtyWorldExtents = true;
                     i += 1;
-                }
-                else
-                {
+                } else {
                     numActiveParticles -= 1;
-                    if (i < numActiveParticles)
-                    {
+                    if (i < numActiveParticles) {
                         particles[i] = particles[numActiveParticles];
                         particles[numActiveParticles] = p;
                     }
                 }
-            }
-            else
-            {
+            } else {
                 p.size += deltaSize;
                 velocity = p.velocity;
                 position = p.position;
                 p.position = md.v3AddScalarMul(position, velocity, deltaTime, position);
 
-                if (deltaVelocity)
-                {
+                if (deltaVelocity) {
                     velocity[1] -= deltaVelocity;
                 }
 
@@ -181,34 +123,27 @@ class ParticleSystem
             }
         }
 
-        // At this point 'i' points to the first dead particle
-        while (this.spawnNextParticle < currentTime)
-        {
-            if (i < maxParticles)
-            {
+        while (this.spawnNextParticle < currentTime) {
+            if (i < maxParticles) {
                 this.createParticle(particles[i]);
                 numActiveParticles += 1;
                 dirtyWorldExtents = true;
                 i += 1;
-            }
-            else
-            {
+            } else {
                 break;
             }
         }
 
         this.numActiveParticles = numActiveParticles;
         this.dirtyWorldExtents = dirtyWorldExtents;
-    }
+    };
 
-    getWorldExtents()
-    {
+    ParticleSystem.prototype.getWorldExtents = function () {
         // Extents calculated from particles
         var extents = this.extents;
 
         var numActiveParticles = this.numActiveParticles;
-        if (numActiveParticles === 0)
-        {
+        if (numActiveParticles === 0) {
             extents[0] = 0;
             extents[1] = 0;
             extents[2] = 0;
@@ -233,20 +168,19 @@ class ParticleSystem
         var zMax = p2;
         var zMin = p2;
 
-        for (var i = 1; i < numActiveParticles; i += 1)
-        {
+        for (var i = 1; i < numActiveParticles; i += 1) {
             p = particles[i];
             position = p.position;
             p0 = position[0];
             p1 = position[1];
             p2 = position[2];
 
-            xMax = (p0 > xMax) ? p0: xMax;
-            xMin = (p0 < xMin) ? p0: xMin;
-            yMax = (p1 > yMax) ? p1: yMax;
-            yMin = (p1 < yMin) ? p1: yMin;
-            zMax = (p2 > zMax) ? p2: zMax;
-            zMin = (p2 < zMin) ? p2: zMin;
+            xMax = (p0 > xMax) ? p0 : xMax;
+            xMin = (p0 < xMin) ? p0 : xMin;
+            yMax = (p1 > yMax) ? p1 : yMax;
+            yMin = (p1 < yMin) ? p1 : yMin;
+            zMax = (p2 > zMax) ? p2 : zMax;
+            zMin = (p2 < zMin) ? p2 : zMin;
         }
 
         extents[0] = xMin - halfSize;
@@ -256,15 +190,13 @@ class ParticleSystem
         extents[4] = yMax + halfSize;
         extents[5] = zMax + halfSize;
         return extents;
-    }
+    };
 
-    destroy()
-    {}
+    ParticleSystem.prototype.destroy = function () {
+    };
 
     // ParticleSystem Constructor function
-    static create(md: MathDevice, gd: GraphicsDevice,
-                  parameters): ParticleSystem
-    {
+    ParticleSystem.create = function (md, gd, parameters) {
         var p = new ParticleSystem();
 
         p.md = md;
@@ -273,7 +205,7 @@ class ParticleSystem
         p.worldPosition = md.v3BuildZero();
         p.particles = [];
         p.dirtyWorldExtents = false;
-        p.colorList = [ md.v4BuildOne()];
+        p.colorList = [md.v4BuildOne()];
         p.v3temp = md.v3BuildZero();
 
         // Required parameters
@@ -288,40 +220,28 @@ class ParticleSystem
         var gravity;
 
         // Set defaults if not specified
-        if (parameters.gravity)
-        {
+        if (parameters.gravity) {
             gravity = parameters.gravity;
-        }
-        else
-        {
+        } else {
             // No gravity
             gravity = 0;
         }
 
-        if (parameters.minSpawnTime)
-        {
+        if (parameters.minSpawnTime) {
             minSpawnTime = parameters.minSpawnTime;
-        }
-        else
-        {
+        } else {
             minSpawnTime = 0.01;
         }
 
-        if (parameters.minLifetime)
-        {
+        if (parameters.minLifetime) {
             minLifetime = parameters.minLifetime;
-        }
-        else
-        {
+        } else {
             minLifetime = 1;
         }
 
-        if (parameters.growRate)
-        {
+        if (parameters.growRate) {
             growRate = parameters.growRate;
-        }
-        else
-        {
+        } else {
             growRate = 0;
         }
 
@@ -343,16 +263,13 @@ class ParticleSystem
         p.gravity = gravity;
 
         // Create an index buffer for the particle system
-
         var numIndexBufferIndices = 6 * maxParticles;
 
-        if (!ParticleSystem.prototype.indexBuffer || (ParticleSystem.prototype.indexBuffer.numIndices < numIndexBufferIndices))
-        {
+        if (!ParticleSystem.prototype.indexBuffer || (ParticleSystem.prototype.indexBuffer.numIndices < numIndexBufferIndices)) {
             var indexData = new Uint16Array(numIndexBufferIndices);
 
             var v0, v1, v2, v3;
-            for (var i = 0, n = 0; i < maxParticles; i += 1)
-            {
+            for (var i = 0, n = 0; i < maxParticles; i += 1) {
                 v0 = 4 * i + 0;
                 v1 = 4 * i + 1;
                 v2 = 4 * i + 2;
@@ -372,8 +289,7 @@ class ParticleSystem
                 data: indexData
             };
 
-            var indexBuffer =
-                gd.createIndexBuffer(indexBufferParameters);
+            var indexBuffer = gd.createIndexBuffer(indexBufferParameters);
 
             ParticleSystem.prototype.indexBuffer = indexBuffer;
         }
@@ -381,23 +297,20 @@ class ParticleSystem
         p.initialize();
 
         return p;
-    }
-}
+    };
+    ParticleSystem.version = 1;
+    return ParticleSystem;
+})();
 
 ParticleSystem.prototype.indexBuffer = null;
 
 //
 //  ParticleSystemRenderer Object
 //
-class ParticleSystemRenderer
-{
-    static version = 1;
-
-    gd: GraphicsDevice;
-    md: MathDevice;
-
-    update(particleSystem, camera)
-    {
+var ParticleSystemRenderer = (function () {
+    function ParticleSystemRenderer() {
+    }
+    ParticleSystemRenderer.prototype.update = function (particleSystem, camera) {
         // Basic updates rewrites the whole vertexBuffer
         var md = this.md;
         var numParticles = particleSystem.numActiveParticles;
@@ -425,8 +338,7 @@ class ParticleSystemRenderer
         var up1 = cameraMatrix[4];
         var up2 = cameraMatrix[5];
 
-        for (var i = 0, n = 0; i < numParticles; i += 1)
-        {
+        for (var i = 0, n = 0; i < numParticles; i += 1) {
             var p = particles[i];
             var color = p.color;
             var position = p.position;
@@ -495,22 +407,19 @@ class ParticleSystemRenderer
         }
 
         vertexBuffer.setData(vertexData, 0, numVerticesChanged);
-    }
+    };
 
-    updateRenderableWorldExtents(particleSystem)
-    {
-        if (particleSystem.dirtyWorldExtents)
-        {
+    ParticleSystemRenderer.prototype.updateRenderableWorldExtents = function (particleSystem) {
+        if (particleSystem.dirtyWorldExtents) {
             var geometryInstance = particleSystem.geometryInstance;
             var worldExtents = particleSystem.getWorldExtents();
 
             geometryInstance.addCustomWorldExtents(worldExtents);
             particleSystem.dirtyWorldExtents = false;
         }
-    }
+    };
 
-    initialize(particleSystem, material, node)
-    {
+    ParticleSystemRenderer.prototype.initialize = function (particleSystem, material, node) {
         // Renderer setup basic quad render method
         var gd = this.gd;
         var maxParticles = particleSystem.maxParticles;
@@ -520,9 +429,9 @@ class ParticleSystemRenderer
         var geometryInstance;
 
         var vertexBufferParameters = {
-            numVertices : numVertexBufferVertices,
-            attributes : ['FLOAT3', 'FLOAT2', 'FLOAT4'],
-            transient : true
+            numVertices: numVertexBufferVertices,
+            attributes: ['FLOAT3', 'FLOAT2', 'FLOAT4'],
+            transient: true
         };
 
         // Dynamic vertexBuffer created for changing position and vertex color
@@ -530,12 +439,12 @@ class ParticleSystemRenderer
         var semantics = gd.createSemantics([gd.SEMANTIC_POSITION, gd.SEMANTIC_TEXCOORD, gd.SEMANTIC_COLOR]);
 
         var surface = {
-                primitive : gd.PRIMITIVE_TRIANGLES,
-                indexBuffer : particleSystem.indexBuffer,
-                numIndices : particleSystem.indexBuffer.numIndices,
-                first : 0,
-                numVertices : 0
-            };
+            primitive: gd.PRIMITIVE_TRIANGLES,
+            indexBuffer: particleSystem.indexBuffer,
+            numIndices: particleSystem.indexBuffer.numIndices,
+            first: 0,
+            numVertices: 0
+        };
 
         var geometry = Geometry.create();
         geometry.semantics = semantics;
@@ -543,12 +452,11 @@ class ParticleSystemRenderer
         geometry.indexBuffer = surface.indexBuffer;
         geometry.vertexBuffer = vertexBuffer;
         geometry.center = new Float32Array([0, 0, 0]);
+
         // Initial extents overwritten by custom extents
         geometry.halfExtents = new Float32Array([1, 1, 1]);
 
-        geometryInstance = GeometryInstance.create(geometry,
-                                                    surface,
-                                                    material);
+        geometryInstance = GeometryInstance.create(geometry, surface, material);
         node.addRenderable(geometryInstance);
 
         // Store for use with update
@@ -558,52 +466,40 @@ class ParticleSystemRenderer
         particleSystem.node = node;
         particleSystem.extents = new Float32Array(6);
         particleSystem.vertexData = new Float32Array(numVertexBufferVertices * (3 + 2 + 4));
-    }
+    };
 
-    destroy(particleSystems)
-    {
-        for (var i = 0; i < particleSystems.length; i += 1)
-        {
+    ParticleSystemRenderer.prototype.destroy = function (particleSystems) {
+        for (var i = 0; i < particleSystems.length; i += 1) {
             var ps = particleSystems[i];
             var gi = ps.geometryInstance;
             var node = ps.node;
-            if (node && gi)
-            {
+            if (node && gi) {
                 node.removeRenderable(gi);
             }
 
             ps.geometryInstance.destroy();
             delete ps.geometryInstance;
         }
-    }
+    };
 
     // ParticleSystemRenderer Constructor function
-    static create(gd: GraphicsDevice, md: MathDevice): ParticleSystemRenderer
-    {
+    ParticleSystemRenderer.create = function (gd, md) {
         var p = new ParticleSystemRenderer();
         p.gd = gd;
         p.md = md;
         return p;
-    }
-}
+    };
+    ParticleSystemRenderer.version = 1;
+    return ParticleSystemRenderer;
+})();
 
 //
 //  Emitter Object
 //
-class Emitter
-{
-    static version = 1;
-
-    gd                     : GraphicsDevice;
-    md                     : MathDevice;
-    particleSystem         : ParticleSystem;
-    particleSystemRenderer : ParticleSystemRenderer;
-    material               : Material;
-    node                   : SceneNode;
-    updateExtentsTime      : number;
-
-    update(currentTime, deltaTime, camera)
-    {
+var Emitter = (function () {
+    function Emitter() {
+    }
+    Emitter.prototype.update = function (currentTime, deltaTime, camera) {
         var particleSystem = this.particleSystem;
         var particleSystemRenderer = this.particleSystemRenderer;
 
@@ -614,38 +510,32 @@ class Emitter
         particleSystemRenderer.update(particleSystem, camera);
 
         particleSystemRenderer.updateRenderableWorldExtents(particleSystem);
-    }
+    };
 
-    setMaterial(material)
-    {
+    Emitter.prototype.setMaterial = function (material) {
         var particleSystem = this.particleSystem;
         var geometryInstance = particleSystem.geometryInstance;
 
         geometryInstance.setMaterial(material);
-    }
+    };
 
-    setParticleColors(colorList)
-    {
+    Emitter.prototype.setParticleColors = function (colorList) {
         var particleSystem = this.particleSystem;
         particleSystem.colorList = colorList;
-    }
+    };
 
-    getNumActiveParticles()
-    {
+    Emitter.prototype.getNumActiveParticles = function () {
         return this.particleSystem.numActiveParticles;
-    }
+    };
 
-    destroy()
-    {
+    Emitter.prototype.destroy = function () {
         // Must destroy renderer first
         this.particleSystemRenderer.destroy([this.particleSystem]);
         this.particleSystem.destroy();
-    }
+    };
 
     // Emitter Constructor function
-    static create(gd: GraphicsDevice, md: MathDevice, material, node,
-                  parameters): Emitter
-    {
+    Emitter.create = function (gd, md, material, node, parameters) {
         var e = new Emitter();
         e.gd = gd;
         e.md = md;
@@ -658,5 +548,8 @@ class Emitter
         e.particleSystemRenderer.initialize(e.particleSystem, material, node);
 
         return e;
-    }
-}
+    };
+    Emitter.version = 1;
+    return Emitter;
+})();
+//# sourceMappingURL=emitter.js.map

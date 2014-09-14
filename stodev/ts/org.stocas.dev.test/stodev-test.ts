@@ -9,7 +9,7 @@ class Greeter {
 
     constructor(element: HTMLElement) {
         this.element = element;        
-    }
+    } 
      
 
     start() {

@@ -7,7 +7,7 @@ declare module Rdfstore {
     export interface RDFEnvironment {
         resolve(url: string): string;
         filters: any;
-    }   
+    }     
  
     export interface RDFNode {
         nominalValue: string;

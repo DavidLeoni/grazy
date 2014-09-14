@@ -1,63 +1,37 @@
 // Copyright (c) 2010-2011 Turbulenz Limited
-
 /*global VMath: false */
-
- 
 /// <reference path="../../js/biz.turbulenz/jslib-modular/turbulenz.d.ts" />
 /// <reference path="../../js/biz.turbulenz/jslib-modular/vmath.d.ts" />
 /// <reference path="../../js/biz.turbulenz/jslib-modular/jsengine_base.d.ts" />
-
-
 //
 // DynamicCameraController
 //
-class DynamicCameraController
-{
-    version = 1;
-
-    transformTypes = {
-        linear  : 0
-    };
-
-    cameraType = {
-        fixed   : 0,    // Cannot move, can set target
-        rail    : 1,    // Can move, can follow target, fixed transition time
-        chase   : 2     // Can follow at a flexible distance, flexible transition time
-    };
-
-    gd            : GraphicsDevice;
-    md            : MathDevice;
-    camera        : Camera;
-    curMode       : number;
-    camTargetPos  : any; // m43
-    transformMode : number;
-    rate          : number;
-    chaseRate     : number;
-    currentTime   : number;
-    startTime     : number;
-    endTime       : number;
-    camCurUp      : any; // v3
-    trackCurPos   : any; // v3
-    isTracking    : boolean;
-
-    setRate(rate)
-    {
+var DynamicCameraController = (function () {
+    function DynamicCameraController() {
+        this.version = 1;
+        this.transformTypes = {
+            linear: 0
+        };
+        this.cameraType = {
+            fixed: 0,
+            rail: 1,
+            chase: 2
+        };
+    }
+    DynamicCameraController.prototype.setRate = function (rate) {
         this.rate = rate;
-    }
+    };
 
-    setChaseRate(rate)
-    {
+    DynamicCameraController.prototype.setChaseRate = function (rate) {
         this.chaseRate = rate;
-    }
+    };
 
-    setTracking(isTracking)
-    {
+    DynamicCameraController.prototype.setTracking = function (isTracking) {
         this.isTracking = isTracking;
-    }
+    };
 
     // TODO: are these args really optional?
-    setCameraTargetPos(pos, time?, delta?)
-    {
+    DynamicCameraController.prototype.setCameraTargetPos = function (pos, time, delta) {
         // Ignore previous camera move if a new position is set
         var md = this.md;
         var p0 = pos[0];
@@ -69,57 +43,51 @@ class DynamicCameraController
         this.currentTime = time;
         this.startTime = time;
         this.endTime = this.currentTime + delta;
-    }
+    };
 
-    setTrackTarget(pos)
-    {
+    DynamicCameraController.prototype.setTrackTarget = function (pos) {
         var md = this.md;
         var p0 = pos[0];
         var p1 = pos[1];
         var p2 = pos[2];
 
         this.trackCurPos = md.v3Build(p0, p1, p2);
-    }
+    };
 
-    setCameraMode(mode)
-    {
+    DynamicCameraController.prototype.setCameraMode = function (mode) {
         var fixedMode = this.cameraType.fixed;
         var railMode = this.cameraType.rail;
         var chaseMode = this.cameraType.chase;
         var camCurPos = this.md.m43Pos(this.camera.matrix);
 
-        switch (mode)
-        {
-        case fixedMode:
-            this.setCameraTargetPos(camCurPos);
-            this.curMode = mode;
-            return true;
-        case railMode:
-            this.curMode = mode;
-            return true;
-        case chaseMode:
-            this.curMode = mode;
-            return true;
-        default:
-            // Not a recognised mode
-            return false;
+        switch (mode) {
+            case fixedMode:
+                this.setCameraTargetPos(camCurPos);
+                this.curMode = mode;
+                return true;
+            case railMode:
+                this.curMode = mode;
+                return true;
+            case chaseMode:
+                this.curMode = mode;
+                return true;
+            default:
+                // Not a recognised mode
+                return false;
         }
-    }
+    };
 
-    snapCameraToTarget()
-    {
+    DynamicCameraController.prototype.snapCameraToTarget = function () {
         var md = this.md;
         md.m43SetPos(this.camera.matrix, this.camTargetPos);
-    }
+    };
 
-    isCameraAtTarget(): boolean
-    {
+    DynamicCameraController.prototype.isCameraAtTarget = function () {
         var md = this.md;
         return md.v3Equal(md.m43Pos(this.camera.matrix), this.camTargetPos);
-    }
+    };
 
-    getLookAtMatrix()
-    {
+    DynamicCameraController.prototype.getLookAtMatrix = function () {
         var md = this.md;
         var up = this.camCurUp;
         var currentPos = md.m43Pos(this.camera.matrix);
@@ -133,10 +101,9 @@ class DynamicCameraController
         var yaxis = v3Cross.call(md, zaxis, xaxis);
 
         return md.m43Build(xaxis, yaxis, zaxis, currentPos);
-    }
+    };
 
-    transform(delta)
-    {
+    DynamicCameraController.prototype.transform = function (delta) {
         // Delta already takes into account rate
         var md = this.md;
         var m43Pos = md.m43Pos;
@@ -149,15 +116,11 @@ class DynamicCameraController
         var camCurPos = m43Pos.call(md, this.camera.matrix);
         var posResult = this.camTargetPos;
 
-        if (this.curMode === this.cameraType.rail &&
-            this.transformMode === this.transformTypes.linear)
-        {
+        if (this.curMode === this.cameraType.rail && this.transformMode === this.transformTypes.linear) {
             posResult = v3Lerp.call(md, camCurPos, camTargetPos, delta);
         }
 
-        if (this.curMode === this.cameraType.chase &&
-            this.transformMode === this.transformTypes.linear)
-        {
+        if (this.curMode === this.cameraType.chase && this.transformMode === this.transformTypes.linear) {
             var camTar2ChaseTar = md.v3Sub(this.trackCurPos, this.camTargetPos, camTar2ChaseTar);
             var chaseTar2CamCur = md.v3Sub(camCurPos, this.trackCurPos, chaseTar2CamCur);
             var dist = md.v3Length(camTar2ChaseTar);
@@ -172,15 +135,13 @@ class DynamicCameraController
         }
 
         md.m43SetPos(this.camera.matrix, posResult);
-    }
+    };
 
-    rotate()
-    {
+    DynamicCameraController.prototype.rotate = function () {
         this.camera.matrix = this.getLookAtMatrix();
-    }
+    };
 
-    update(delta)
-    {
+    DynamicCameraController.prototype.update = function (delta) {
         var updateMatrix = false;
         var fixedMode = this.cameraType.fixed;
         var railMode = this.cameraType.rail;
@@ -190,59 +151,47 @@ class DynamicCameraController
         this.currentTime += delta * this.rate;
 
         // If delta is small enough we keep the current transform
-        if (delta > VMath.precision)
-        {
-            if (!this.isCameraAtTarget())
-            {
+        if (delta > VMath.precision) {
+            if (!this.isCameraAtTarget()) {
                 updateMatrix = true;
-                switch (this.curMode)
-                {
-                case fixedMode:
-                    this.snapCameraToTarget();
-                    break;
-                case railMode:
-                    if (this.currentTime < this.endTime)
-                    {
-                        transformDelta = (this.currentTime - this.startTime) / (this.endTime - this.startTime);
-                        this.transform(transformDelta);
-                    }
-                    else
-                    {
-                        // Set the matrix to the final transform
+                switch (this.curMode) {
+                    case fixedMode:
                         this.snapCameraToTarget();
-                    }
-                    break;
-                case chaseMode:
-                    if (this.currentTime < this.endTime)
-                    {
-                        transformDelta = (this.currentTime - this.startTime) / (this.endTime - this.startTime);
-                        this.transform(transformDelta);
-                    }
-                    else
-                    {
-                        // Set the matrix to the final transform
-                        this.snapCameraToTarget();
-                    }
-                    break;
+                        break;
+                    case railMode:
+                        if (this.currentTime < this.endTime) {
+                            transformDelta = (this.currentTime - this.startTime) / (this.endTime - this.startTime);
+                            this.transform(transformDelta);
+                        } else {
+                            // Set the matrix to the final transform
+                            this.snapCameraToTarget();
+                        }
+                        break;
+                    case chaseMode:
+                        if (this.currentTime < this.endTime) {
+                            transformDelta = (this.currentTime - this.startTime) / (this.endTime - this.startTime);
+                            this.transform(transformDelta);
+                        } else {
+                            // Set the matrix to the final transform
+                            this.snapCameraToTarget();
+                        }
+                        break;
                 }
             }
 
-            if (this.isTracking)
-            {
+            if (this.isTracking) {
                 updateMatrix = true;
                 this.rotate();
             }
         }
 
-        if (updateMatrix)
-        {
+        if (updateMatrix) {
             this.camera.updateViewMatrix();
         }
-    }
+    };
 
     // Constructor function
-    static create(camera: Camera, gd: GraphicsDevice): DynamicCameraController
-    {
+    DynamicCameraController.create = function (camera, gd) {
         var c = new DynamicCameraController();
 
         c.gd = gd;
@@ -256,12 +205,16 @@ class DynamicCameraController
         c.currentTime = 0.0;
         c.startTime = 0.0;
         c.endTime = 0.0;
+
         // Up is Y axis up by default
         c.camCurUp = c.md.v3Build(0, 1, 0);
+
         // Look at center
         c.trackCurPos = c.md.v3BuildZero();
         c.isTracking = false;
 
         return c;
-    }
-}
+    };
+    return DynamicCameraController;
+})();
+//# sourceMappingURL=dynamiccameracontroller.js.map

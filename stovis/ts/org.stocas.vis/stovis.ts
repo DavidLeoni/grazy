@@ -1,8 +1,8 @@
 
 /// <reference path="../../../stolang/js/com.jquery/jquery.d.ts" />
 /// <reference path="../../../stolang/ts/org.stocas.lang/stolang.ts" />
-
  
+  
 /*global TurbulenzEngine: true */
 /*global TurbulenzServices: false */
 /*global RequestHandler: false */

@@ -327,4 +327,3 @@ var stolang;
     })();
     stolang.Trees = Trees;
 })(stolang || (stolang = {}));
-//# sourceMappingURL=stolang.js.map

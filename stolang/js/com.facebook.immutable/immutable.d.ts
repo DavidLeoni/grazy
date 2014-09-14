@@ -20,8 +20,9 @@
  * mirroring that of Array, Map, and Set. It is easy and efficient to convert to
  * and from plain Javascript types.
  */
-
-declare module 'Immutable' {
+// sto made without quotes otherwise can't find module from stolang
+// declare module 'Immutable' {
+declare module Immutable {
 
   /**
    * `Immutable.is()` has the same semantics as Object.is(), but treats immutable

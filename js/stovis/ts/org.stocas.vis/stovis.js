@@ -1,15 +1,15 @@
-/// <reference path="../../../stolang/js/com.jquery/2.0.3/jquery.d.ts" />
+/// <reference path="../../../stolang/js/com.jquery/jquery.d.ts" />
 /// <reference path="../../../stolang/ts/org.stocas.lang/stolang.ts" />
-/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/turbulenz.d.ts" />
-/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/servicedatatypes.d.ts" />
-/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/services.d.ts" />
-/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/aabbtree.d.ts" />
-/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/jsengine_base.d.ts" />
-/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/jsengine.d.ts" />
-/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/fontmanager.d.ts" />
-/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/utilities.d.ts" />
-/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/tzdraw2d.d.ts" />
-/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/physics2d.d.ts" />
+/// <reference path="../../js/biz.turbulenz/jslib-modular/turbulenz.d.ts" />
+/// <reference path="../../js/biz.turbulenz/jslib-modular/servicedatatypes.d.ts" />
+/// <reference path="../../js/biz.turbulenz/jslib-modular/services.d.ts" />
+/// <reference path="../../js/biz.turbulenz/jslib-modular/aabbtree.d.ts" />
+/// <reference path="../../js/biz.turbulenz/jslib-modular/jsengine_base.d.ts" />
+/// <reference path="../../js/biz.turbulenz/jslib-modular/jsengine.d.ts" />
+/// <reference path="../../js/biz.turbulenz/jslib-modular/fontmanager.d.ts" />
+/// <reference path="../../js/biz.turbulenz/jslib-modular/utilities.d.ts" />
+/// <reference path="../../js/biz.turbulenz/jslib-modular/tzdraw2d.d.ts" />
+/// <reference path="../../js/biz.turbulenz/jslib-modular/physics2d.d.ts" />
 /// <reference path="htmlcontrols.ts" />
 
 
@@ -42,6 +42,10 @@ var stovis;
     })();
     stovis.JsonLd = JsonLd;
 
+    /**
+    * Visual representation of a node. It doesn't necessarily represent a node present
+    * in the triple store.
+    */
     var VisNode = (function () {
         function VisNode(id, rdfNode, body) {
             this.id = id;
@@ -64,10 +68,13 @@ var stovis;
     })();
     stovis.VisNode = VisNode;
 
+    /**
+    todo should assign body to it?
+    */
     var VisRect = (function () {
         /**
         * @param x Coordinate x of the lower left corner
-        * @param y Coordinate yof the lower left corner
+        * @param y Coordinate y of the lower left corner
         */
         function VisRect(x, y, width, height) {
         }
@@ -101,7 +108,6 @@ var stovis;
 
             rdfstore.create(function (vs) {
                 _this.visStore = vs;
-                _this.visGraph = vs.rdf.createGraph();
                 _this.nodeMap = {};
                 _this.relationMap = {};
                 _this.nodeIdCounter = 0;
@@ -113,20 +119,8 @@ var stovis;
 
                 vs.rdf.setPrefix(stovis.STOVIS_PREFIX, stovis.STOVIS_IRI);
 
-                console.log("visGraph = ", _this.visGraph);
                 console.log("visStore = ", _this.visStore);
 
-                /**
-                graph.add(vs.rdf.createTriple(vs.rdf.createNamedNode(vs.rdf.resolve("ex:Alice")),
-                vs.rdf.createNamedNode(vs.rdf.resolve("foaf:name")),
-                vs.rdf.createLiteral("alice")));
-                */
-                /*var triples = graph.match(null, vs.rdf.createNamedNode(vs.rdf.resolve("foaf:name")), null).toArray();
-                
-                console.log("triples = ", triples);
-                
-                console.log("rdf api worked? " + (triples[0].object.valueOf() === 'alice'));
-                */
                 // ************       Graphics stuff    *************************
                 _this.contactsEnabled = false;
                 _this.framesPerSecond = 60;
@@ -422,32 +416,6 @@ var stovis;
         @return Returns the root node.
         */
         /* addTree(treeObj : JsonLd, rect : VisRect) : VisNode {
-        var outt : any = {};
-        $.extend(true, outt, treeObj);
-        
-        outt.level = 0;
-        var stackin = [outt];
-        var stackout = [];
-        var el;
-        var height = 0;
-        
-        while (stackin.length !== 0){
-        el = stackin.pop();
-        stackout.push(el);
-        $.each(el, (k)=>{
-        var v = el[k];
-        if (k !== "@id"){
-        if ($.isPlainObject(v) && v["@id"]){
-        v.level = el.level + 1;
-        height = Math.max(height, v.level);
-        stackin.push(v);
-        } else {
-        throw new Error("Only JsonLd objects are supported as field values!");
-        }
-        };
-        });
-        };
-        console.log("outt = ", outt);
         
         new VisNode(
         $.each(treeObj, (k)=>{
@@ -767,7 +735,7 @@ var stovis;
             });
             this.htmlControls.register();
         };
-        Editor.labels = ["L", "[]", "head", "tail"];
+        Editor.labels = ["L", "[]", "first", "rest"];
         return Editor;
     })();
     stovis.Editor = Editor;

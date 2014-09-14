@@ -1,4 +1,4 @@
-/// <reference path="../../js/com.facebook.immutable/2.0.3/immutable.d.ts" />
+/// <reference path="../../js/com.facebook.immutable/immutable.d.ts" />
 /// <reference path="../ts/org.stocas.lang/stolang.ts" />
 
 /*
@@ -25,12 +25,12 @@ module stolangTest {
     var sumCs = (field, n, mcs: ImmSeq<any, number>): number => {
         console.log("inside sumCs  makeM: ", "parentField: ", field, "n: ", n, "cs: ", mcs, "mcs.toArray(): ", mcs.toArray());
         return mcs.length > 0 ?
-        mcs.reduce((acc: number,
-            el: number) => {            
-            return acc + el;
-        }, 0)
-        : n;
-        }
+            mcs.reduce((acc: number,
+                el: number) => {
+                return acc + el;
+            }, 0)
+            : n;
+    }
     
     export var tests = {
         /** 'testMethodName' should be visualized in UI */
@@ -114,7 +114,73 @@ module stolangTest {
                     { cs: [{}] }
                 ]
             }]
-        }, getCs))
+        }, getCs)),
+        
+        /**
+            Notice currently the created graph is independent of the original store, 
+            see this bug: https://github.com/DavidLeoni/stocas/issues/2  
+        */
+        testRdfStore: () => {
+            /* var store;
+
+            
+            rdfstore.create((s) => {
+                store = s;
+            });           
+            
+            // s.rdf.setPrefix("ex", "http://example.org/people/");
+            // s.rdf.setPrefix("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
+            
+            // s.rdf.setPrefix("foaf", "http://xmlns.com/foaf/0.1/");
+            
+            /* todo need promises to test this
+            store.execute('LOAD <http://dbpedialite.org/titles/Lisp_%28programming_language%29>\
+                           INTO GRAPH <lisp>', function(success){
+              if(success) {
+                var query = 'PREFIX foaf:<http://xmlns.com/foaf/0.1/> SELECT ?o \
+                             FROM NAMED <lisp> { GRAPH <lisp> { ?s foaf:page ?o} }';
+                store.execute(query, function(success, results) {
+                    console.log("success=", success);
+                    console.log("results=", results);
+                });
+              }
+            }); 
+            */            
+        },
+        
+        /**
+            Notice currently the created graph is independent of the original store, 
+            see this bug: https://github.com/DavidLeoni/stocas/issues/2  
+        */
+        testRdfCreateGraph: () => {
+            /* var s;
+
+            rdfstore.create((store) => {
+                s = store;
+            });
+    
+            while(!s){
+            }
+            
+            // s.rdf.setPrefix("ex", "http://example.org/people/");
+            // s.rdf.setPrefix("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
+            
+            s.rdf.setPrefix("foaf", "http://xmlns.com/foaf/0.1/");
+            
+            var graph = s.rdf.createGraph();
+            graph.add(s.rdf.createTriple(s.rdf.createNamedNode(s.rdf.resolve("ex:Alice")),
+                s.rdf.createNamedNode(s.rdf.resolve("foaf:name")),
+                s.rdf.createLiteral("alice")));
+
+            var triples = graph.match(null, s.rdf.createNamedNode(s.rdf.resolve("foaf:name")), null).toArray();            
+
+            return assertEquals('alice', triples[0].object.valueOf());
+            */
+
+        }
+                
+
+
     }
 
 

@@ -3,9 +3,9 @@
 /*global VMath: false */
 
 
-/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/turbulenz.d.ts" />
-/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/vmath.d.ts" />
-/// <reference path="../../js/biz.turbulenz/0.27/jslib-modular/jsengine_base.d.ts" />
+/// <reference path="../../js/biz.turbulenz/0jslib-modular/turbulenz.d.ts" />
+/// <reference path="../../js/biz.turbulenz/jslib-modular/vmath.d.ts" />
+/// <reference path="../../js/biz.turbulenz/jslib-modular/jsengine_base.d.ts" />
 
 
 //

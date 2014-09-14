@@ -1,4 +1,4 @@
-/// <reference path="../../js/com.facebook.immutable/2.0.3/immutable.d.ts" />
+/// <reference path="../../js/com.facebook.immutable/immutable.d.ts" />
 
 
 declare module Rdfstore {
@@ -59,7 +59,6 @@ declare module Rdfstore {
 
     }
 
-    //function create : 
 }
 
 declare var rdfstore: Rdfstore.Base;
@@ -77,6 +76,7 @@ module stolang {
     export var callConstructor = function(constr) {
         var factoryFunction = constr.bind.apply(constr, arguments);
         return new factoryFunction();
+            
     };
 
     /**

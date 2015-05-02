@@ -1,18 +1,18 @@
-StoCAS
+Grazy
 ======
 
 
-Stochastic Computer Algebra System
+Crazy Lazy Graphs
 
 **Project status**: Planning
 
-**Roadmap**: see [project issues](https://github.com/DavidLeoni/StoCAS/issues)
+**Roadmap**: see [project issues](https://github.com/DavidLeoni/Grazy/issues)
 
-**Documentation**: see [the wiki](https://github.com/DavidLeoni/StoCAS/wiki)
+**Documentation**: see [the wiki](https://github.com/DavidLeoni/Grazy/wiki)
 
-**License**: MIT
+**License**: Apache v2
 
 
 #### Credits
 
-* David Leoni 
+* David Leoni

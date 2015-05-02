@@ -1,0 +1,24 @@
+{
+    "version": "1.5.0-beta",
+    "compilerOptions": {
+		"rootDir":"mods",
+        "target": "es6",        
+        "declaration": false,
+        "noImplicitAny": false,
+        "removeComments": true,
+        "noLib": false,
+        "outDir": "js",
+		"noEmitOnError" : true
+    },
+    "filesGlob": [
+        "./mods/**/*.ts",
+        "./typings/**/*.ts"        
+    ],
+    "files": [        
+		"./mods/gralang/main/src/immutable.d.ts",
+		"./mods/gralang/main/src/bacon.d.ts",
+		"./mods/gralang/main/src/jquery.d.ts",
+        "./mods/gralang/test/src/test-modules-1.ts",
+		"./mods/gralang/test/src/test-modules-2.ts"        
+    ]
+}

@@ -7,10 +7,11 @@
 
 
 
-########## stocas specific
+########## grazy specific
 
 /conf
-
+/.tscache
+/node_modules
 
 
 ##### INTELLIJ specific

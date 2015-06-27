@@ -1,26 +1,19 @@
-/*
-* New TypeScript file
-*/
 
-module gralangTest {
+import * as gralang from '../../main/src/gralang';
+
+
     import Trees = gralang.Trees;
     import GrazyErr = gralang.GrazyErr;
-    import Imm = Immutable;
-    import ImmOrdMap = Immutable.OrderedMap;
-    import ImmIndSeq = Immutable.IndexedSequence;
-    import ImmSeq = Immutable.Sequence;
-    import ImmVec = Immutable.Vector;
-    import TestResult = gralang.test.TestResult;
     import TestSuite = gralang.test.TestSuite;
     import assertEquals = gralang.test.assertEquals;
     import assertNotEquals = gralang.test.assertNotEquals;
     import report = gralang.report;
 
+    declare var $ : any; // as elegant as it can be
 
-
-    var getCs = (n) => (n.cs ? ImmVec.from(n.cs) : ImmVec.empty());
-    var sumCs = (field, n, mcs: ImmSeq<any, number>): number => {
-        console.log("inside sumCs  makeM: ", "parentField: ", field, "n: ", n, "cs: ", mcs, "mcs.toArray(): ", mcs.toArray());
+    var getCs = (n) => n.cs ? n.cs :  [];
+    var sumCs = (field, n, mcs: number[]): number => {
+        console.log("inside sumCs  makeM: ", "parentField: ", field, "n: ", n, "cs: ", mcs, "mcs.toArray(): ", mcs);
         return mcs.length > 0 ?
             mcs.reduce((acc: number,
                 el: number) => {
@@ -66,12 +59,12 @@ module gralangTest {
         },
 
         testGetCsType: () => assertNotEquals("array", $.type(getCs({ cs: [1, 2] }))),
-        testGetCsLength: () => assertEquals(2, getCs({ cs: [1, 2] }).length),
+        testGetCsLength: () => assertEquals(2, getCs({ cs: [1, 2] }).size),
         testGetCs_1: () => assertEquals(1, getCs({ cs: [1, 2] }).first()),
         testGetCs_2: () => assertEquals(2, getCs({ cs: [1, 2] }).last()),
         testEmptyTree: () => assertEquals(3,
             Trees.fold({},
-                (n) => Imm.Map.empty(),
+                (n) => [],
                 (n) => 3)),
         // nodes can be either numbers or {cs:[...]}
         testSumOneNodeTree: () => assertEquals(3, Trees.fold({ cs: [1, 2] },
@@ -210,7 +203,7 @@ module gralangTest {
 
     var singleTestName = getParameterByName("test");
     var testSuite: TestSuite;
-    var suiteName = "Stolang";
+    var suiteName = "Gralang";
     if (singleTestName) {
         if (tests[singleTestName]) {
             var boxedTest = {};
@@ -227,4 +220,3 @@ module gralangTest {
     var targetDiv = $('<div>');
     runTests(testSuite, targetDiv);
     targetDiv.appendTo($("body"));
-}

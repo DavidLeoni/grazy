@@ -1,78 +1,70 @@
-/// <reference path="../../../../node_modules/immutable/dist/immutable.d.ts" />
-
-module grazy {
-    import Imm = Immutable;
-    import ImmOrdMap = Immutable.OrderedMap;
-    import ImmSeq = Immutable.Sequence;
-
-    export var GRAZY_PREFIX = 'grazy';
-    export var GRAZY_IRI = 'https://github.com/davidleoni/grazy/';
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+define(["require", "exports"], function (require, exports) {
+    exports.GRAZY_PREFIX = 'grazy';
+    exports.GRAZY_IRI = 'https://github.com/DavidLeoni/grazy/';
     /**
      * Usage: callConstructor(MyConstructor, arg1, arg2);
      */
-    export var callConstructor = function(constr) {
+    exports.callConstructor = function (constr) {
         var factoryFunction = constr.bind.apply(constr, arguments);
         return new factoryFunction();
-
     };
-
     /**
         Immutable. Adopts JsonLD tags.
     */
-    export class GraphNode {
-        "@id" : string;
-        "@reverse" : {[key:string]: GraphNode[]};
-    }
-
-    export var EmptyGraph : GraphNode = {
-        "@id" : GRAZY_IRI + "empty-node",
-        "@reverse" : <any>[]
+    var GraphNode = (function () {
+        function GraphNode() {
+        }
+        return GraphNode;
+    })();
+    exports.GraphNode = GraphNode;
+    exports.EmptyGraph = {
+        "@id": exports.GRAZY_IRI + "empty-node",
+        "@reverse": []
     };
-
-
     /**
      * Usage: applyToConstructor(MyConstructor, [arg1, arg2]);
      */
-    export var applyToConstructor = function(constr, argArray) {
+    exports.applyToConstructor = function (constr, argArray) {
         var args = [null].concat(argArray);
         var factoryFunction = constr.bind.apply(constr, args);
         return new factoryFunction();
     };
-
     /**
      * This class encapsulates Javascript Error object. It doesn't extend it because all the error inheritance stuff
      * in Javascript is really fucked up.
      *
      */
-    export class GrazyErr {
-        name: string;
-        message: string;
-        error: Error;
-        params: any[];
-
+    var GrazyErr = (function () {
         /**
          * You must pass a JavaScript Error so browser can keep track of stack execution. Message in original error is not considered.
          * Usage example: new GrazyErr(new Error(), "We got a problem!", "This object looks fishy: ", {a:666});
          * @param message Overrides message in Error.
          */
-        constructor(error: Error, message, ...params) {
+        function GrazyErr(error, message) {
+            var params = [];
+            for (var _i = 2; _i < arguments.length; _i++) {
+                params[_i - 2] = arguments[_i];
+            }
             // console.error.apply(null, params);
-            this.name = (<any>this.constructor).name;
+            this.name = this.constructor.name;
             this.message = message;
             this.error = error;
             this.params = params;
         }
-
-        toString() {
+        GrazyErr.prototype.toString = function () {
             return this.allParams().join("");
-        }
-
-
+        };
         /**
          * Returns array with name, message plus all params
          */
-        allParams(): any[] {
-            var ret = this.params.slice(0)
+        GrazyErr.prototype.allParams = function () {
+            var ret = this.params.slice(0);
             var afterMsg = "\n";
             if (this.params.length > 0) {
                 afterMsg = "\n";
@@ -80,165 +72,146 @@ module grazy {
             ret.unshift(this.message + afterMsg);
             ret.unshift(this.name + ":");
             return ret;
-        }
-
+        };
         /** Reports the error to console with console.log */
-        consoleLog(): void {
+        GrazyErr.prototype.consoleLog = function () {
             console.log.apply(console, this.allParams());
             console.log(this.error);
-
-
-        }
-
+        };
         /** Reports the error to console with console.error */
-        consoleError(): void {
+        GrazyErr.prototype.consoleError = function () {
             var completeParams = this.allParams().slice(0);
             completeParams.push(" \n", this.error);
             console.error.apply(console, completeParams);
-        }
-    }
-
-    export class EqErr extends GrazyErr {
-        constructor(error: Error, actual) {
-            super(error, "Failed assertion!",
-                "  Expected something different than ->", actual, "<-\n");
+        };
+        return GrazyErr;
+    })();
+    exports.GrazyErr = GrazyErr;
+    var EqErr = (function (_super) {
+        __extends(EqErr, _super);
+        function EqErr(error, actual) {
+            _super.call(this, error, "Failed assertion!", "  Expected something different than ->", actual, "<-\n");
             this.actual = actual;
         }
-        actual: any;
-    }
-
-    export class NotEqErr extends GrazyErr {
-        constructor(error: Error, expected, actual) {
-            super(error, "Failed assertion!",
-                "  Expected ->", expected, "<-\n",
-                "  Actual   ->", actual, "<-");
+        return EqErr;
+    })(GrazyErr);
+    exports.EqErr = EqErr;
+    var NotEqErr = (function (_super) {
+        __extends(NotEqErr, _super);
+        function NotEqErr(error, expected, actual) {
+            _super.call(this, error, "Failed assertion!", "  Expected ->", expected, "<-\n", "  Actual   ->", actual, "<-");
             this.expected = expected;
             this.actual = actual;
         }
-        actual: any;
-        expected: any;
-    }
-
-
+        return NotEqErr;
+    })(GrazyErr);
+    exports.NotEqErr = NotEqErr;
     /**
      * Takes a variable number of arguments and displays them as concatenated strings in an alert message, plus it calls console.error with the same arguments. Usage example:
      * signal(new Error(), "We got a problem", "Expected: ", 3, " got:", 2 + 2);
      * @returns {GrazyErr}
      */
-    export var report = function(error: Error, ...args) {
+    exports.report = function (error) {
+        var args = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            args[_i - 1] = arguments[_i];
+        }
         var i;
         var arr = [];
         for (i = 0; i < arguments.length; i++) {
             arr.push(arguments[i]);
         }
-        var exc = applyToConstructor(GrazyErr, arr);
-
+        var exc = exports.applyToConstructor(GrazyErr, arr);
         exc.toConsole();
         alert(exc.toString() + "\n\nLook in the console for more details.");
         return exc;
     };
-
-
-
-    /**
-     * Visits nodes of type N and outputs type M
-     */
-    export interface TreeVisitor<N, M> {
-        getChildren(t: N): Imm.Sequence<N, number>;
-    }
-
-
-
-
-    export module test {
-
-        /**
+    var test;
+    (function (test_1) {
+        /**azy
          * Returns EqErr in case actual is equals to notExpected.
          * Doesn't throw any exception
          * @return null if no error occurred
         */
-        export function assertNotEquals(notExpected, actual): GrazyErr {
-            var res = Imm.is(actual, notExpected);
+        function assertNotEquals(notExpected, actual) {
+            var res = Object.is(actual, notExpected);
             if (res) {
                 return new EqErr(new Error(), actual);
-            } else {
+            }
+            else {
                 return null;
-            };
-        };
-
+            }
+            ;
+        }
+        test_1.assertNotEquals = assertNotEquals;
+        ;
         /**
          * Doesn't throw any exception,
          * @return null if no error occurred
         */
-        export function assertEquals(expected, actual): GrazyErr {
-            var res = Imm.is(actual, expected);
+        function assertEquals(expected, actual) {
+            var res = Object.is(actual, expected);
             if (res) {
                 return null;
-            } else {
+            }
+            else {
                 return new NotEqErr(new Error(), expected, actual);
-            };
-        };
-
-        export class TestResult {
-            testName: string
-        test: any; // todo should be a method sig
-            error: GrazyErr;
-
-            constructor(testName, test, error?: GrazyErr) {
+            }
+            ;
+        }
+        test_1.assertEquals = assertEquals;
+        ;
+        var TestResult = (function () {
+            function TestResult(testName, test, error) {
                 this.testName = testName;
                 this.test = test;
                 this.error = error;
             }
-        }
-
-        export class TestSuite {
-            tests: any;
-            name: string;
-            testResults: TestResult[];
-            passedTests: TestResult[];
-            failedTests: TestResult[];
-
-            constructor(name: string, tests) {
+            return TestResult;
+        })();
+        test_1.TestResult = TestResult;
+        var TestSuite = (function () {
+            function TestSuite(name, tests) {
                 this.testResults = [];
                 this.passedTests = [];
                 this.failedTests = [];
                 this.name = name;
                 this.tests = tests;
             }
-
-            run() {
+            TestSuite.prototype.run = function () {
                 this.testResults = [];
                 this.passedTests = [];
                 this.failedTests = [];
-
                 for (var key in this.tests) {
-                    var grazyErr: GrazyErr = null;
+                    var grazyErr = null;
                     try {
                         grazyErr = this.tests[key]();
-                    } catch (catchedError) {
+                    }
+                    catch (catchedError) {
                         if (catchedError instanceof GrazyErr) {
                             grazyErr = catchedError;
-                        } else {
+                        }
+                        else {
                             grazyErr = new GrazyErr(catchedError, "Test threw an Error!");
                         }
                     }
                     var testRes = new TestResult(key, this.tests[key], grazyErr);
                     this.testResults.push(testRes);
-
                     if (grazyErr) {
                         this.failedTests.push(testRes);
-                    } else {
+                    }
+                    else {
                         this.passedTests.push(testRes);
                     }
                 }
-
-            }
+            };
+            return TestSuite;
+        })();
+        test_1.TestSuite = TestSuite;
+    })(test = exports.test || (exports.test = {}));
+    var Trees = (function () {
+        function Trees() {
         }
-    }
-
-
-
-    export class Trees {
         /**
          * Recursively applies function makeM to a node of type N and
          * M-fied children of type M, so the resulting tree will have type M
@@ -247,97 +220,67 @@ module grazy {
          *        the field name (or index) that was holding it
          *        and its now M-fied children
          */
-        static fold<N, M>(rootNode: N,
-            getChildren: (t: N) => Imm.Sequence<any, N>,
-            makeM: (field, t: N, children: Imm.Sequence<any, M>) => M): M {
-
+        Trees.fold = function (rootNode, getChildren, makeM) {
             var processedNodesCounter = 0;
-
             /** Holds original nodes */
             var stack1 = [{
-                key: null,
-                node: rootNode
-            }]; // only rootNode should have null as key
-
+                    key: null,
+                    node: rootNode
+                }]; // only rootNode should have null as key
             /** Holds nodes-as-expressions that still need to be completely filled with
               M-fied children */
-            var stack2: {
-                key: any;
-                node: N;
-                neededChildren: number;
-                children: any[]; //[<any, M>]
-            }[] = [];
-
-
+            var stack2 = [];
             /**
                 Inserts node to existing children container in top entry of stack2.
                 If inserting the node fills the children container,
                 resolves expressions popping nodes in stack2. If stack2 gets empty
                 returns last calculated expression, otherwise return null.
             */
-            var nodeToStack2 = (key: any, node: N): M => {
-
-                var toInsert = makeM(key,
-                    node,
-                    ImmOrdMap.empty<any, M>());
+            var nodeToStack2 = function (key, node) {
+                var toInsert = makeM(key, node, []);
                 var curKey = key;
-
                 while (stack2.length > 0) {
-
                     var top2 = stack2[0];
-
                     top2.children.unshift([curKey, toInsert]);
-
                     if (top2.children.length > top2.neededChildren) {
-                        throw new GrazyErr(new Error(), "Found more children in top2 than the needed ones!",
-                            "stack1: ", stack1, "top2 =", top2, "stack2: ", stack2);
+                        throw new GrazyErr(new Error(), "Found more children in top2 than the needed ones!", "stack1: ", stack1, "top2 =", top2, "stack2: ", stack2);
                     }
-
                     if (top2.neededChildren === top2.children.length) {
                         stack2.shift();
-
-
-                        toInsert = makeM(top2.key, top2.node, ImmOrdMap.from(top2.children));
+                        toInsert = makeM(top2.key, top2.node, top2.children);
                         curKey = top2.key;
-                    } else {
+                    }
+                    else {
                         return null;
                     }
-
                 }
-
-
                 return toInsert; // stack2.length = 0
-
-            }
-
-            var ret: M;
-
-
+            };
+            var ret;
             while (stack1.length > 0) {
-
                 var el = stack1.shift();
-
                 var children = getChildren(el.node);
-
-
-                if (children.length === 0) { // leaf node
+                if (children.length === 0) {
                     ret = nodeToStack2(el.key, el.node);
                     if (stack1.length === 0) {
-                        if (stack2.length > 0){
+                        if (stack2.length > 0) {
                             throw new GrazyErr(new Error(), "Found non-empty stack2: ", stack2);
                         }
                         return ret;
-                    } else {
-                        if (stack2.length === 0){
+                    }
+                    else {
+                        if (stack2.length === 0) {
                             return ret;
-                        } else {
-                            if (ret){
+                        }
+                        else {
+                            if (ret) {
                                 throw new GrazyErr(new Error(), "ret should be null, found instead ", ret);
                             }
                         }
                     }
-                } else {  // non-leaf nosde
-                    children.forEach((c, k) => {
+                }
+                else {
+                    children.forEach(function (c, k) {
                         stack1.unshift({
                             node: c,
                             key: k
@@ -352,27 +295,19 @@ module grazy {
                     };
                     stack2.unshift(toStack2);
                 }
-
             }
-
             throw new Error("Shouldn't arrive till here...");
-
             return makeM(null, null, null);
-        }
-
-        static height<N>(node: N,
-            getChildren: (t: N) => Imm.Sequence<any, N>): number {
-            return Trees.fold(node, getChildren, (parentField, n, cs: ImmSeq<any, number>)
-                => {
+        };
+        Trees.height = function (node, getChildren) {
+            return Trees.fold(node, getChildren, function (parentField, n, cs) {
                 return cs.length === 0 ?
                     0
-                    : Math.max.apply(null, cs.toArray()) + 1;
-            })
-        }
-
-    }
-
-
-
-
-}
+                    : Math.max.apply(null, cs) + 1;
+            });
+        };
+        return Trees;
+    })();
+    exports.Trees = Trees;
+});
+//# sourceMappingURL=gralang.js.map

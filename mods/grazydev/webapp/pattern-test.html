@@ -1,0 +1,51 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <title>Pattern tests</title>
+
+    <style type="text/css">
+    .error {
+    	color : #FF5555;
+    }
+    .success {
+        color: DarkGreen;
+    }
+
+    .clickable:hover {
+    	text-decoration: underline;
+    }
+
+    </style>
+
+
+</head>
+
+<body>
+
+    <div id="content"></div>
+
+ 
+    <script src="../../gralang/main/lib/requirejs/require.js"></script>
+
+    <script>
+
+      // needed JUST for jquery
+      require.config({
+          paths: {
+              'jquery': "../../gralang/main/lib/jquery/jquery"
+          }
+      });
+
+
+      require(["../../../js/gralang/test/src/pattern-test", "jquery"], function (patternTest) {
+
+          console.log("pattern-test is now loaded");
+          
+     }); 
+    </script>
+</body>
+
+
+</html>

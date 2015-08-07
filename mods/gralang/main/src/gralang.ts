@@ -43,12 +43,17 @@
       return new factoryFunction();
   };
 
+
+    interface GrazyObj {
+      
+    }
+
   /**
    * This class encapsulates Javascript Error object. It doesn't extend it because all the error inheritance stuff
    * in Javascript is really fucked up.
    *
    */
-  export class GrazyErr {
+  export class GrazyErr implements GrazyObj {
       name: string;
       message: string;
       error: Error;
@@ -123,6 +128,87 @@
       expected: any;
   }
 
+
+
+    /**
+     * A lazy sequence, possibly infinite
+     */
+     export interface Seq<T extends GrazyObj> {
+        first() : T;
+        next(): Seq<T>; 
+        size(): Nat;      
+     }
+     
+     /** 
+      * A possibly infinite natural number >= 0
+      */
+     export interface Nat extends Seq<Nil> {        
+        next(): Nat;
+     }
+     
+     export interface Nats {
+        zero() : NatZero;
+        one() : NatOne;
+        two() : FiniteNat;
+     }
+
+     /** 
+      * Here it is, the evil infinity
+      */
+     export interface InfinityNat extends Nat {
+        first() : Nil;
+        next(): InfinityNat;
+     }
+     
+     
+     /** 
+      * A finite natural number >= 0
+      */
+     export interface FiniteNat extends Nat {              
+        // Should return itself!        
+        size():FiniteNat;
+     }
+     
+     export interface NatZero extends FiniteNat {
+                  
+     }
+     
+     export interface NatOne extends FiniteNat {
+                  
+     }
+     
+     /**
+      * A finite list
+      */
+    export interface List<T extends GrazyObj> extends Seq<T > {
+        
+        next(): List<T>; 
+        size(): FiniteNat;               
+    }
+
+    export interface Lists {      
+      nil();  
+      list<T>(...args: T[]) : List<T>;    
+    }
+
+    export interface Cons<T> extends List<T> {
+        
+    }
+    
+
+    export interface Nil extends List<GrazyObj> {
+
+        /**
+            [1,2].slice(2,2) returns [] . I will be less forgiving.
+        */
+        next(): List<string>;
+
+        /**
+            [].pop() returns undefined . I will be less forgiving.
+        */
+        head() : GrazyErr;
+    }    
+    
 
   /**
    * Takes a variable number of arguments and displays them as concatenated strings in an alert message, plus it calls console.error with the same arguments. Usage example:

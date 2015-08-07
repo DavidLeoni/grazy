@@ -52,8 +52,8 @@ define(["require", "exports", '../../main/src/gralang'], function (require, expo
                 return null;
             }
         },
-        testGetCsType: function () { return assertNotEquals("array", $.type(getCs({ cs: [1, 2] }))); },
-        testGetCsLength: function () { return assertEquals(2, getCs({ cs: [1, 2] }).size); },
+        testGetCsType: function () { return assertEquals("array", $.type(getCs({ cs: [1, 2] }))); },
+        testGetCsLength: function () { return assertEquals(2, getCs({ cs: [1, 2] }).length); },
         testGetCs_1: function () { return assertEquals(1, getCs({ cs: [1, 2] }).first()); },
         testGetCs_2: function () { return assertEquals(2, getCs({ cs: [1, 2] }).last()); },
         testEmptyTree: function () { return assertEquals(3, Trees.fold({}, function (n) { return []; }, function (n) { return 3; })); },

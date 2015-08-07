@@ -58,8 +58,8 @@ import * as gralang from '../../main/src/gralang';
             }
         },
 
-        testGetCsType: () => assertNotEquals("array", $.type(getCs({ cs: [1, 2] }))),
-        testGetCsLength: () => assertEquals(2, getCs({ cs: [1, 2] }).size),
+        testGetCsType: () => assertEquals("array", $.type(getCs({ cs: [1, 2] }))),
+        testGetCsLength: () => assertEquals(2, getCs({ cs: [1, 2] }).length),
         testGetCs_1: () => assertEquals(1, getCs({ cs: [1, 2] }).first()),
         testGetCs_2: () => assertEquals(2, getCs({ cs: [1, 2] }).last()),
         testEmptyTree: () => assertEquals(3,

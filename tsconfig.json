@@ -10,12 +10,23 @@
         "declaration": false,
         "noImplicitAny": false,
         "removeComments": false,
-        "noEmitOnError": true
+        "noEmitOnError": false
     },
     "files": [
+        "./mods/gralang/main/src/defs.ts",
+        "./mods/gralang/main/src/ref-impl.ts",
         "./mods/gralang/main/src/gralang.ts",
         "./mods/gralang/test/src/gralang-test.ts",
-        "./mods/gralang/test/src/pattern-test.ts",
+        "./mods/gralang/test/src/gralang-test-generics.ts",
+        "./mods/gralang/test/src/gralang-test-modules.ts",
+        "./mods/gralang/test/src/gralang-test-grammar.ts",        
+        
+        "./mods/gralang/test/src/test-modules-1.ts",
+        "./mods/gralang/test/src/test-modules-2.ts",
+        "./mods/gralang/test/src/test-modules-3.ts",
+        "./mods/gralang/test/src/test-modules-3-impl.ts",
+        "./mods/gralang/test/src/test-modules-4.ts",
+        "./mods/gralang/test/src/test-modules-5.ts",                  
         "./mods/server/src/compiler.ts",
         "./mods/gralang/main/lib/typescript/lib.es6.d.ts",
         "./mods/gralang/main/lib/typescript/typescript.d.ts"        

@@ -48,7 +48,7 @@ export enum ObjStatus {
   ERROR
 }
 
-export interface GrazyObj {
+export interface Obj {
   __status(): ObjStatus;
   /**
    * Eventual error is status is 'ERROR'
@@ -61,7 +61,7 @@ export interface GrazyObj {
  * in Javascript is really fucked up.
  *
  */
-export class GrazyErr implements GrazyObj {
+export class GrazyErr implements Obj {
   name: string;
   message: string;
   error: Error;
@@ -158,29 +158,29 @@ export class NotEqErr extends GrazyErr {
 /**
  * A lazy sequence, possibly infinite
  */
-export interface Seq<T extends GrazyObj> extends GrazyObj {
+export interface Seq<T extends Obj> extends Obj {
   first(): T;
   next(): Seq<T>;
-  size(): Nat;
+  size(): SuperNat;
 }
      
 /** 
  * A possibly infinite natural number >= 0
  */
-export interface Nat extends Seq<Nil> {
-  next(): Nat;
+export interface SuperNat extends Seq<Nil> {
+  next(): SuperNat;
 }
 
 export module Nats {
   export declare let zero: NatZero;
   export declare let one: NatOne;
-  export declare let two: FiniteNat;
+  export declare let two: Nat;
 }
 
 /** 
  * Here it is, the evil infinity
  */
-export interface InfinityNat extends Nat {
+export interface InfinityNat extends SuperNat {
   first(): Nil;
   next(): InfinityNat;
 }
@@ -189,32 +189,32 @@ export interface InfinityNat extends Nat {
 /** 
  * A finite natural number >= 0
  */
-export interface FiniteNat extends Nat {              
+export interface Nat extends SuperNat {              
   // Should return itself!        
-  size(): FiniteNat;
+  size(): Nat;
 }
 
-export interface NatZero extends FiniteNat {
+export interface NatZero extends Nat {
 
 }
 
-export interface NatOne extends FiniteNat {
+export interface NatOne extends Nat {
 
 }
      
 /**
  * A finite list
  */
-export interface List<T extends GrazyObj> extends Seq<T > {
+export interface List<T extends Obj> extends Seq<T > {
   next(): List<T>;
-  size(): FiniteNat;
+  size(): Nat;
 }
-export declare function List<T extends GrazyObj>(...args: T[]): List<T>;
+export declare function List<T extends Obj>(...args: T[]): List<T>;
 
-export interface Cons<T extends GrazyObj> extends List<T> {
+export interface Cons<T extends Obj> extends List<T> {
 }
 
-export interface Nil extends List<GrazyObj> {
+export interface Nil extends List<Obj> {
 
   /**
       [].pop() returns undefined . I will be less forgiving.
@@ -224,13 +224,13 @@ export interface Nil extends List<GrazyObj> {
   /**
       [1,2].slice(2,2) returns [] . I will be less forgiving.
   */
-  next(): List<GrazyObj>;
+  next(): List<Obj>;
 }    
 
 export declare function Nil() : Nil;
 
 export declare let nil : Nil;
-export declare function list<T extends GrazyObj>(...args: T[]): List<T>;
+export declare function list<T extends Obj>(...args: T[]): List<T>;
 
 
 /**

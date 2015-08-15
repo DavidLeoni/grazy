@@ -18,7 +18,7 @@ class B {
 
 let a : A = new B();
 
-let b : B = new A();
+//let b : B = new A();
 
 class E {
 	r : number;

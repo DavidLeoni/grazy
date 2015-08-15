@@ -1,6 +1,7 @@
 define(["require", "exports", '../../main/src/gralang', './test-modules-4'], function (require, exports, gralang_1, test_modules_4_1) {
     var Trees = gralang_1.default.Trees;
-    var GrazyErr = gralang_1.default.GrazyErr;
+    var List = gralang_1.default.List;
+    var GrazyErr = gralang_1.default.Err;
     var TestSuite = gralang_1.default.test.TestSuite;
     var assertEquals = gralang_1.default.test.assertEquals;
     var assertNotEquals = gralang_1.default.test.assertNotEquals;
@@ -8,7 +9,7 @@ define(["require", "exports", '../../main/src/gralang', './test-modules-4'], fun
     var t = gralang_1.default.nil;
     exports.testGralang = gralang_1.default;
     exports.testNice = test_modules_4_1.default;
-    var getCs = function (n) { return n.cs ? n.cs : []; };
+    var getCs = function (n) { return n.cs ? n.cs : List(); };
     var sumCs = function (field, n, mcs) {
         console.log("inside sumCs  makeM: ", "parentField: ", field, "n: ", n, "cs: ", mcs, "mcs.toArray(): ", mcs);
         return mcs.length > 0 ?

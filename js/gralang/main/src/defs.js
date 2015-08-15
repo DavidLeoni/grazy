@@ -41,40 +41,65 @@ define(["require", "exports"], function (require, exports) {
     })(exports.ObjStatus || (exports.ObjStatus = {}));
     var ObjStatus = exports.ObjStatus;
     /**
+     * todo p1 add decorator for creating withers,
+     * see http://stackoverflow.com/questions/31224574/generate-generic-getters-and-setters-for-entity-properties-using-decorators
+     */
+    var Obj = (function () {
+        function Obj() {
+            this.__status = ObjStatus.TO_CALCULATE;
+            /**
+             * Eventual error is status is 'ERROR'
+             */
+            this.__error = Errors.NONE;
+        }
+        /**
+         * Returns new object with property prop set to v. Property MUST belong to object type definition propoerties
+         * TODO this currently doesn't do any type checking (sic), maybe maybe we can fix it.
+         * Also, for output type, see https://github.com/Microsoft/TypeScript/issues/285
+         */
+        Obj.prototype.with = function (prop, v) {
+            var ret = {};
+            for (var _i = 0, _a = Object.keys(this); _i < _a.length; _i++) {
+                var k = _a[_i];
+                ret[k] = this[k];
+            }
+            ret[prop] = v;
+            return ret;
+        };
+        return Obj;
+    })();
+    exports.Obj = Obj;
+    /**
      * This class encapsulates Javascript Error object. It doesn't extend it because all the error inheritance stuff
      * in Javascript is really fucked up.
      *
      */
-    var GrazyErr = (function () {
+    var Err = (function (_super) {
+        __extends(Err, _super);
         /**
          * You must pass a JavaScript Error so browser can keep track of stack execution. Message in original error is not considered.
          * Usage example: new GrazyErr(new Error(), "We got a problem!", "This object looks fishy: ", {a:666});
          * @param message Overrides message in Error.
          */
-        function GrazyErr(error, message) {
+        function Err(error, message) {
             var params = [];
             for (var _i = 2; _i < arguments.length; _i++) {
                 params[_i - 2] = arguments[_i];
             }
+            _super.call(this);
             // console.error.apply(null, params);
             this.name = this.constructor.name;
             this.message = message;
             this.error = error;
             this.params = params;
         }
-        GrazyErr.prototype.__status = function () {
-            return ObjStatus.COMPLETED;
-        };
-        GrazyErr.prototype.__error = function () {
-            return null; //todo  Errors.none();
-        };
-        GrazyErr.prototype.toString = function () {
+        Err.prototype.toString = function () {
             return this.allParams().join("");
         };
         /**
          * Returns array with name, message plus all params
          */
-        GrazyErr.prototype.allParams = function () {
+        Err.prototype.allParams = function () {
             var ret = this.params.slice(0);
             var afterMsg = "\n";
             if (this.params.length > 0) {
@@ -85,27 +110,23 @@ define(["require", "exports"], function (require, exports) {
             return ret;
         };
         /** Reports the error to console with console.log */
-        GrazyErr.prototype.consoleLog = function () {
+        Err.prototype.consoleLog = function () {
             console.log.apply(console, this.allParams());
             console.log(this.error);
         };
         /** Reports the error to console with console.error */
-        GrazyErr.prototype.consoleError = function () {
+        Err.prototype.consoleError = function () {
             var completeParams = this.allParams().slice(0);
             completeParams.push(" \n", this.error);
             console.error.apply(console, completeParams);
         };
-        return GrazyErr;
-    })();
-    exports.GrazyErr = GrazyErr;
-    /*
-      export interface Errors {
-        none() : GrazyErr;
-      }
-      
-      export class Errors implements Errors {
-        
-      } */
+        return Err;
+    })(Obj);
+    exports.Err = Err;
+    var Errors;
+    (function (Errors) {
+        Errors.NONE = new Err(null, "");
+    })(Errors = exports.Errors || (exports.Errors = {}));
     var EqErr = (function (_super) {
         __extends(EqErr, _super);
         function EqErr(error, actual) {
@@ -113,7 +134,7 @@ define(["require", "exports"], function (require, exports) {
             this.actual = actual;
         }
         return EqErr;
-    })(GrazyErr);
+    })(Err);
     exports.EqErr = EqErr;
     var NotEqErr = (function (_super) {
         __extends(NotEqErr, _super);
@@ -123,11 +144,30 @@ define(["require", "exports"], function (require, exports) {
             this.actual = actual;
         }
         return NotEqErr;
-    })(GrazyErr);
+    })(Err);
     exports.NotEqErr = NotEqErr;
     var Nats;
     (function (Nats) {
     })(Nats = exports.Nats || (exports.Nats = {}));
+    var Bool = (function () {
+        function Bool() {
+        }
+        return Bool;
+    })();
+    exports.Bool = Bool;
+    function if_(c, t, e) {
+    }
+    exports.if_ = if_;
+    var Cons = (function () {
+        function Cons() {
+        }
+        Cons.prototype.next = function () {
+            if ()
+                ;
+        };
+        return Cons;
+    })();
+    exports.Cons = Cons;
     /**
      * Takes a variable number of arguments and displays them as concatenated strings in an alert message, plus it calls console.error with the same arguments. Usage example:
      * signal(new Error(), "We got a problem", "Expected: ", 3, " got:", 2 + 2);
@@ -143,7 +183,7 @@ define(["require", "exports"], function (require, exports) {
         for (i = 0; i < arguments.length; i++) {
             arr.push(arguments[i]);
         }
-        var exc = exports.applyToConstructor(GrazyErr, arr);
+        var exc = exports.applyToConstructor(Err, arr);
         exc.toConsole();
         alert(exc.toString() + "\n\nLook in the console for more details.");
         return exc;
@@ -210,11 +250,11 @@ define(["require", "exports"], function (require, exports) {
                         grazyErr = this.tests[key]();
                     }
                     catch (catchedError) {
-                        if (catchedError instanceof GrazyErr) {
+                        if (catchedError instanceof Err) {
                             grazyErr = catchedError;
                         }
                         else {
-                            grazyErr = new GrazyErr(catchedError, "Test threw an Error!");
+                            grazyErr = new Err(catchedError, "Test threw an Error!");
                         }
                     }
                     var testRes = new TestResult(key, this.tests[key], grazyErr);
@@ -264,7 +304,7 @@ define(["require", "exports"], function (require, exports) {
                     var top2 = stack2[0];
                     top2.children.unshift([curKey, toInsert]);
                     if (top2.children.length > top2.neededChildren) {
-                        throw new GrazyErr(new Error(), "Found more children in top2 than the needed ones!", "stack1: ", stack1, "top2 =", top2, "stack2: ", stack2);
+                        throw new Err(new Error(), "Found more children in top2 than the needed ones!", "stack1: ", stack1, "top2 =", top2, "stack2: ", stack2);
                     }
                     if (top2.neededChildren === top2.children.length) {
                         stack2.shift();
@@ -285,7 +325,7 @@ define(["require", "exports"], function (require, exports) {
                     ret = nodeToStack2(el.key, el.node);
                     if (stack1.length === 0) {
                         if (stack2.length > 0) {
-                            throw new GrazyErr(new Error(), "Found non-empty stack2: ", stack2);
+                            throw new Err(new Error(), "Found non-empty stack2: ", stack2);
                         }
                         return ret;
                     }
@@ -295,7 +335,7 @@ define(["require", "exports"], function (require, exports) {
                         }
                         else {
                             if (ret) {
-                                throw new GrazyErr(new Error(), "ret should be null, found instead ", ret);
+                                throw new Err(new Error(), "ret should be null, found instead ", ret);
                             }
                         }
                     }

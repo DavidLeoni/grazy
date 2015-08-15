@@ -7,7 +7,8 @@ import nice from './test-modules-4'
 
 
 let Trees = gralang.Trees;
-let GrazyErr = gralang.GrazyErr;
+let List = gralang.List;
+let GrazyErr = gralang.Err;
 let TestSuite = gralang.test.TestSuite;
 let assertEquals = gralang.test.assertEquals;
 let assertNotEquals = gralang.test.assertNotEquals;
@@ -21,7 +22,7 @@ declare var $: any; // as elegant as it can be
 export var testGralang = gralang;
 export var testNice = nice;
 
-var getCs = (n) => n.cs ? n.cs : GArr();
+var getCs = (n) => n.cs ? n.cs : List();
 var sumCs = (field, n, mcs: number[]): number => {
     console.log("inside sumCs  makeM: ", "parentField: ", field, "n: ", n, "cs: ", mcs, "mcs.toArray(): ", mcs);
     return mcs.length > 0 ?

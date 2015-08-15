@@ -1,6 +1,5 @@
 
-// todo little hack for having ES6 fuinctions
-declare var Object: any;
+
 
 
 export var GRAZY_PREFIX = 'grazy';
@@ -46,14 +45,33 @@ export enum ObjStatus {
   COMPLETED,
   TO_CALCULATE,
   ERROR
-}
+} 
 
-export interface Obj {
-  __status(): ObjStatus;
+/**
+ * todo p1 add decorator for creating withers, 
+ * see http://stackoverflow.com/questions/31224574/generate-generic-getters-and-setters-for-entity-properties-using-decorators
+ */
+export class Obj<T> { // cannot write T extends Obj...
+  __status = ObjStatus.TO_CALCULATE;
+  
   /**
    * Eventual error is status is 'ERROR'
    */
-  __error(): GrazyErr;
+  __error : Err = Errors.NONE;
+
+  /**
+   * Returns new object with property prop set to v. Property MUST belong to object type definition propoerties
+   * TODO this currently doesn't do any type checking (sic), maybe maybe we can fix it.
+   * Also, for output type, see https://github.com/Microsoft/TypeScript/issues/285
+   */
+  with(prop: string, v: any): T {
+    let ret = {};
+    for (let k of Object.keys(this)) {
+      ret[k] = this[k];
+    }
+    ret[prop] = v;
+    return <T> ret;
+  }
 }
 
 /**
@@ -61,19 +79,12 @@ export interface Obj {
  * in Javascript is really fucked up.
  *
  */
-export class GrazyErr implements Obj {
+export class Err extends Obj<Err> {
+    
   name: string;
   message: string;
   error: Error;
   params: any[];
-
-  __status() {
-    return ObjStatus.COMPLETED;
-  }
-
-  __error() {
-    return null;//todo  Errors.none();
-  }
 
   /**
    * You must pass a JavaScript Error so browser can keep track of stack execution. Message in original error is not considered.
@@ -81,12 +92,14 @@ export class GrazyErr implements Obj {
    * @param message Overrides message in Error.
    */
   constructor(error: Error, message, ...params) {
+    super();
     // console.error.apply(null, params);
     this.name = (<any>this.constructor).name;
     this.message = message;
     this.error = error;
     this.params = params;
   }
+
 
   toString() {
     return this.allParams().join("");
@@ -111,8 +124,6 @@ export class GrazyErr implements Obj {
   consoleLog(): void {
     console.log.apply(console, this.allParams());
     console.log(this.error);
-
-
   }
 
   /** Reports the error to console with console.error */
@@ -123,16 +134,13 @@ export class GrazyErr implements Obj {
   }
 }
 
-/*
-  export interface Errors {
-    none() : GrazyErr;
-  }
-  
-  export class Errors implements Errors {
-    
-  } */
 
-export class EqErr extends GrazyErr {
+export module Errors {
+  export let NONE = new Err(null, "");
+
+}
+
+export class EqErr extends Err {
   constructor(error: Error, actual) {
     super(error, "Failed assertion!",
       "  Expected something different than ->", actual, "<-\n");
@@ -141,7 +149,7 @@ export class EqErr extends GrazyErr {
   actual: any;
 }
 
-export class NotEqErr extends GrazyErr {
+export class NotEqErr extends Err {
   constructor(error: Error, expected, actual) {
     super(error, "Failed assertion!",
       "  Expected ->", expected, "<-\n",
@@ -184,7 +192,15 @@ export interface InfinityNat extends SuperNat {
   first(): Nil;
   next(): InfinityNat;
 }
-     
+
+
+export class Bool implements Obj {
+
+}
+
+export function if_(c: Bool, t, e) {
+
+}
      
 /** 
  * A finite natural number >= 0
@@ -211,7 +227,11 @@ export interface List<T extends Obj> extends Seq<T > {
 }
 export declare function List<T extends Obj>(...args: T[]): List<T>;
 
-export interface Cons<T extends Obj> extends List<T> {
+export class Cons<T extends Obj> implements List<T> {
+  _next: List<T>;
+  next() : List<T> {
+    throw new Error("todo implement me");
+  }
 }
 
 export interface Nil extends List<Obj> {
@@ -219,17 +239,17 @@ export interface Nil extends List<Obj> {
   /**
       [].pop() returns undefined . I will be less forgiving.
   */
-  first(): GrazyErr;
+  first(): Err;
 
   /**
       [1,2].slice(2,2) returns [] . I will be less forgiving.
   */
   next(): List<Obj>;
-}    
+}
 
-export declare function Nil() : Nil;
+export declare function Nil(): Nil;
 
-export declare let nil : Nil;
+export declare let nil: Nil;
 export declare function list<T extends Obj>(...args: T[]): List<T>;
 
 
@@ -244,7 +264,7 @@ export var report = function(error: Error, ...args) {
   for (i = 0; i < arguments.length; i++) {
     arr.push(arguments[i]);
   }
-  var exc = applyToConstructor(GrazyErr, arr);
+  var exc = applyToConstructor(Err, arr);
 
   exc.toConsole();
   alert(exc.toString() + "\n\nLook in the console for more details.");
@@ -269,7 +289,7 @@ export module test {
    * Doesn't throw any exception
    * @return null if no error occurred
   */
-  export function assertNotEquals(notExpected, actual): GrazyErr {
+  export function assertNotEquals(notExpected, actual): Err {
     var res = Object.is(actual, notExpected);
     if (res) {
       return new EqErr(new Error(), actual);
@@ -282,7 +302,7 @@ export module test {
    * Doesn't throw any exception,
    * @return null if no error occurred
   */
-  export function assertEquals(expected, actual): GrazyErr {
+  export function assertEquals(expected, actual): Err {
     var res = Object.is(actual, expected);
     if (res) {
       return null;
@@ -294,9 +314,9 @@ export module test {
   export class TestResult {
     testName: string
     test: any; // todo should be a method sig
-    error: GrazyErr;
+    error: Err;
 
-    constructor(testName, test, error?: GrazyErr) {
+    constructor(testName, test, error?: Err) {
       this.testName = testName;
       this.test = test;
       this.error = error;
@@ -324,14 +344,14 @@ export module test {
       this.failedTests = [];
 
       for (var key in this.tests) {
-        var grazyErr: GrazyErr = null;
+        var grazyErr: Err = null;
         try {
           grazyErr = this.tests[key]();
         } catch (catchedError) {
-          if (catchedError instanceof GrazyErr) {
+          if (catchedError instanceof Err) {
             grazyErr = catchedError;
           } else {
-            grazyErr = new GrazyErr(catchedError, "Test threw an Error!");
+            grazyErr = new Err(catchedError, "Test threw an Error!");
           }
         }
         var testRes = new TestResult(key, this.tests[key], grazyErr);
@@ -399,7 +419,7 @@ export module Trees {
         top2.children.unshift([curKey, toInsert]);
 
         if (top2.children.length > top2.neededChildren) {
-          throw new GrazyErr(new Error(), "Found more children in top2 than the needed ones!",
+          throw new Err(new Error(), "Found more children in top2 than the needed ones!",
             "stack1: ", stack1, "top2 =", top2, "stack2: ", stack2);
         }
 
@@ -434,7 +454,7 @@ export module Trees {
         ret = nodeToStack2(el.key, el.node);
         if (stack1.length === 0) {
           if (stack2.length > 0) {
-            throw new GrazyErr(new Error(), "Found non-empty stack2: ", stack2);
+            throw new Err(new Error(), "Found non-empty stack2: ", stack2);
           }
           return ret;
         } else {
@@ -442,7 +462,7 @@ export module Trees {
             return ret;
           } else {
             if (ret) {
-              throw new GrazyErr(new Error(), "ret should be null, found instead ", ret);
+              throw new Err(new Error(), "ret should be null, found instead ", ret);
             }
           }
         }

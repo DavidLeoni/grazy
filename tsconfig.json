@@ -9,7 +9,9 @@
         "declaration": false,
         "noImplicitAny": false,
         "removeComments": false,
-        "noEmitOnError": false
+        "noEmitOnError": false     ,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators":true
     },
     "files": [
         "./mods/gralang/main/src/defs.ts",
@@ -18,7 +20,8 @@
         "./mods/gralang/test/src/gralang-test.ts",
         "./mods/gralang/test/src/gralang-test-generics.ts",
         "./mods/gralang/test/src/gralang-test-modules.ts",
-        "./mods/gralang/test/src/gralang-test-grammar.ts",        
+        "./mods/gralang/test/src/gralang-test-grammar.ts",  
+        "./mods/gralang/test/src/experimental/decor.ts",        
         
         "./mods/gralang/test/src/test-modules-1.ts",
         "./mods/gralang/test/src/test-modules-2.ts",

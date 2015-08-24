@@ -39,36 +39,71 @@ export var applyToConstructor = function(constr, argArray) {
 };
 
 
-
-
 export enum ObjStatus {
   COMPLETED,
   TO_CALCULATE,
   ERROR
 } 
 
+
 /**
  * todo p1 add decorator for creating withers, 
  * see http://stackoverflow.com/questions/31224574/generate-generic-getters-and-setters-for-entity-properties-using-decorators
  */
 export class Obj<T> { // cannot write T extends Obj...
-  __status = ObjStatus.TO_CALCULATE;
+  
+  private __status = ObjStatus.TO_CALCULATE;
   
   /**
    * Eventual error is status is 'ERROR'
    */
-  __error : Err = Errors.NONE;
+  private __error : Err = Errors.NONE;
+
+
+  private __clone() : T {
+    let ret : T = <any> {};
+        for (let k of Object.keys(this)) {
+          ret[k] = this[k];
+        }      
+    return ret;
+  }
+  
+  protected _as(err : Err) : T{
+    let ret : Obj<{}> = <any> this.__clone();
+            
+    ret.__status = ObjStatus.ERROR;
+    if (err){
+      ret.__error = err;  
+    } else {
+      ret.__error = new Err(new Error(), "Tried to set error on ", this, " but forgot to pass Err object!!");
+    }
+    return <any> ret;      
+  }
+  
+  protected _error() : Err{
+    return this.__error;
+  }
+  
+  protected _status() : ObjStatus{
+    return this.__status;
+  }
+  
+  
+  constructor(){
+    this.__status = ObjStatus.TO_CALCULATE;
+    this.__error = Errors.NONE;
+  }
 
   /**
    * Returns new object with property prop set to v. Property MUST belong to object type definition propoerties
    * TODO this currently doesn't do any type checking (sic), maybe maybe we can fix it.
    * Also, for output type, see https://github.com/Microsoft/TypeScript/issues/285
+   * See also 'Compile-time checking of string literal arguments based on type': https://github.com/Microsoft/TypeScript/issues/394
+   * 'nameof' operator support: https://github.com/Microsoft/TypeScript/issues/1579
+   * 
    */
   with(prop: string, v: any): T {
-    let ret = {};
-    for (let k of Object.keys(this)) {
-      ret[k] = this[k];
-    }
+    let ret : T = this.__clone();
     ret[prop] = v;
     return <T> ret;
   }
@@ -166,91 +201,207 @@ export class NotEqErr extends Err {
 /**
  * A lazy sequence, possibly infinite
  */
-export interface Seq<T extends Obj> extends Obj {
-  first(): T;
-  next(): Seq<T>;
-  size(): SuperNat;
+export class Seq<T extends Obj<{}>> extends Obj<Seq<T>> {
+  first(): T{
+       throw new Error("Subclasses must implment me!");
+  };
+  next(): Seq<T>{
+       throw new Error("Subclasses must implment me!");
+  };
+  size(): SuperNat{
+       throw new Error("Subclasses must implment me!");
+  };
 }
      
+
+
+export module Nats {
+  export const zero: NatZero = new NatZero();
+  export const one: NatOne = new NatOne();
+  export const two: Nat;
+}
+
+
 /** 
  * A possibly infinite natural number >= 0
  */
-export interface SuperNat extends Seq<Nil> {
-  next(): SuperNat;
-}
-
-export module Nats {
-  export declare let zero: NatZero;
-  export declare let one: NatOne;
-  export declare let two: Nat;
+export class SuperNat extends Seq<Nil> {
+  next(): SuperNat {
+      throw new Error("Subclasses must implment me!");
+  };
+  plus(n : SuperNat) : SuperNat{
+     throw new Error("Subclasses must implment me!");
+  };  
+  
+  size(): SuperNat {
+    return this;
+  }
 }
 
 /** 
  * Here it is, the evil infinity
  */
-export interface InfinityNat extends SuperNat {
-  first(): Nil;
-  next(): InfinityNat;
+export class InfinityNat extends SuperNat {
+ 
+  first(): Nil {
+    return nil;   
+  }
+  next(): InfinityNat {
+    return this;  
+  }
+  
+  plus(n) : InfinityNat {
+    return this;   
+  }
+  
+  size(){
+    return this;
+  }
 }
 
 
-export class Bool implements Obj {
-
+export class Bool extends Obj<Bool> {      
 }
 
-export function if_(c: Bool, t, e) {
-
+export function if_(c: Bool, th:Expr, el:Expr) {
+  
 }
      
 /** 
  * A finite natural number >= 0
  */
-export interface Nat extends SuperNat {              
+export class Nat extends SuperNat {              
   // Should return itself!        
-  size(): Nat;
+  size() : Nat {
+    return this;
+  }
+    
+  
 }
 
-export interface NatZero extends Nat {
-
+export class NatZero extends Nat {
+       
+  plus(n : SuperNat) : SuperNat {
+    if (n instanceof NatZero){
+      return this;
+    } else {
+      return n;   
+    }          
+  }
+  
+  first() : Nil {
+     return <any> this._as(new Err(new Error(), "Tried to get next() of zero!")); 
+  }
+  
+  next(): Nat {      
+     return <any> this._as(new Err(new Error(), "Tried to get next() of zero!"));         
+  }    
+  
+  size() : NatZero {
+    return this;
+  }
 }
 
-export interface NatOne extends Nat {
-
+export class NatOne extends PositiveNat {
+  
+  first() : Nil {
+     return nil; 
+  }
+  
+  next(): NatZero {      
+     return Nats.zero;         
+  }    
+  
+  size() : NatOne {
+    return this;
+  }
 }
+
+
+export class PositiveNat extends Nat {
+
+  private _next : Nat;
+  
+  plus(n : SuperNat) : SuperNat {
+    if (n instanceof NatZero){
+      return this;
+    } else if (n instanceof InfinityNat){
+      return n;
+    } else {
+      return this._next.plus(n);  
+    }          
+  }
+  
+  first() : Nil {
+     return <any> this._as(new Err(new Error(), "Tried to get next() of zero!")); 
+  }
+  
+  next(): Nat {      
+     return <any> this._as(new Err(new Error(), "Tried to get next() of zero!"));         
+  }    
+  
+  size() : PositiveNat {
+    return this;  
+  }
+}
+
+
      
 /**
  * A finite list
  */
-export interface List<T extends Obj> extends Seq<T > {
-  next(): List<T>;
-  size(): Nat;
-}
-export declare function List<T extends Obj>(...args: T[]): List<T>;
-
-export class Cons<T extends Obj> implements List<T> {
-  _next: List<T>;
-  next() : List<T> {
-    throw new Error("todo implement me");
+export class List<T extends Obj<{}>> extends Seq<T > {
+  next(): List<T>{
+    throw new Error("Descendants should implement this method!");
+  };
+  size(): Nat{
+        throw new Error("Descendants should implement this method!");
   }
 }
 
-export interface Nil extends List<Obj> {
+export class Cons<T extends Obj<{}>> extends List<T> {
+  _next: List<T>;
+  next() : List<T> {
+    return this._next;   
+  }
+  size() : Nat{
+    return Nats.one.plus(this.next().size());  
+  }
+  
+}
+
+
+export class TNil<T extends Obj<{}>> extends List<T> {
 
   /**
       [].pop() returns undefined . I will be less forgiving.
   */
-  first(): Err;
+  first(): T {
+    return <any> this._as(new Err(new Error(),"Tried to call first() on empty list!"));    
+  };
+  
+  size(): NatZero {
+    return Nats.zero;
+  }
 
   /**
       [1,2].slice(2,2) returns [] . I will be less forgiving.
   */
-  next(): List<Obj>;
+  next(): List<T>{
+    return this._as(new Err(new Error(),"Tried to call next() on empty list!"));  
+  };
 }
 
-export declare function Nil(): Nil;
+export type Nil =  TNil<any>;
 
-export declare let nil: Nil;
-export declare function list<T extends Obj>(...args: T[]): List<T>;
+
+export let nil: Nil = new TNil();
+
+export let list = function<T extends Obj<{}>>(...args: T[]): List<T> {
+  if (args.length === 0){
+    return nil;
+  }  
+}  
 
 
 /**

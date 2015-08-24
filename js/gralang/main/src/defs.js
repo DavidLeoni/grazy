@@ -56,6 +56,9 @@ define(["require", "exports"], function (require, exports) {
          * Returns new object with property prop set to v. Property MUST belong to object type definition propoerties
          * TODO this currently doesn't do any type checking (sic), maybe maybe we can fix it.
          * Also, for output type, see https://github.com/Microsoft/TypeScript/issues/285
+         * See also 'Compile-time checking of string literal arguments based on type': https://github.com/Microsoft/TypeScript/issues/394
+         * 'nameof' operator support: https://github.com/Microsoft/TypeScript/issues/1579
+         *
          */
         Obj.prototype.with = function (prop, v) {
             var ret = {};
@@ -162,8 +165,7 @@ define(["require", "exports"], function (require, exports) {
         function Cons() {
         }
         Cons.prototype.next = function () {
-            if ()
-                ;
+            throw new Error("todo implement me");
         };
         return Cons;
     })();

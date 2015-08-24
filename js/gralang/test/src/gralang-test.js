@@ -1,16 +1,16 @@
-define(["require", "exports", '../../main/src/defs', './test-modules-4'], function (require, exports, gralang, test_modules_4_1) {
-    var Trees = gralang.Trees;
-    var Nats = gralang.Nats;
-    var List = gralang.List;
-    var GrazyErr = gralang.Err;
-    var TestSuite = gralang.test.TestSuite;
-    var assertEquals = gralang.test.assertIs;
-    var assertNotEquals = gralang.test.assertNotIs;
-    var assertEq = gralang.test.assertEq;
-    var assertNotEq = gralang.test.assertNotEq;
-    var report = gralang.report;
-    var t = gralang.nil;
-    exports.testGralang = gralang;
+define(["require", "exports", '../../main/src/gralang', './test-modules-4'], function (require, exports, gralang_1, test_modules_4_1) {
+    var Trees = gralang_1.default.Trees;
+    var Nats = gralang_1.default.Nats;
+    var List = gralang_1.default.List;
+    var GrazyErr = gralang_1.default.Err;
+    var TestSuite = gralang_1.default.test.TestSuite;
+    var assertEquals = gralang_1.default.test.assertIs;
+    var assertNotEquals = gralang_1.default.test.assertNotIs;
+    var assertEq = gralang_1.default.test.assertEq;
+    var assertNotEq = gralang_1.default.test.assertNotEq;
+    var report = gralang_1.default.report;
+    var t = gralang_1.default.nil;
+    exports.testGralang = gralang_1.default;
     exports.testNice = test_modules_4_1.default;
     var getCs = function (n) { return n.cs ? n.cs : []; };
     var sumCs = function (field, n, mcs) {
@@ -27,7 +27,7 @@ define(["require", "exports", '../../main/src/defs', './test-modules-4'], functi
         testAssertEquals_1: function () {
             var res = assertEquals(true, true);
             if (res) {
-                return new gralang.NotEqErr(new Error(), null, res);
+                return new gralang_1.default.NotEqErr(new Error(), null, res);
             }
             else {
                 return null;
@@ -39,7 +39,7 @@ define(["require", "exports", '../../main/src/defs', './test-modules-4'], functi
                 return null;
             }
             else {
-                return new gralang.NotEqErr(new Error(), null, res);
+                return new gralang_1.default.NotEqErr(new Error(), null, res);
             }
         },
         testAssertNotEquals_1: function () {
@@ -48,13 +48,13 @@ define(["require", "exports", '../../main/src/defs', './test-modules-4'], functi
                 return null;
             }
             else {
-                return new gralang.EqErr(new Error(), res);
+                return new gralang_1.default.EqErr(new Error(), res);
             }
         },
         testAssertNotEquals_2: function () {
             var res = assertNotEquals(true, false);
             if (res) {
-                return new gralang.NotEqErr(new Error(), null, res);
+                return new gralang_1.default.NotEqErr(new Error(), null, res);
             }
             else {
                 return null;

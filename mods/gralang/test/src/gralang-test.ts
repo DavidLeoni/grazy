@@ -1,5 +1,5 @@
 
-import * as gralang from '../../main/src/defs';
+import gralang from '../../main/src/gralang';
 
 // notice writing import * as nice does NOT work!!
 

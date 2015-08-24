@@ -95,6 +95,14 @@ define(["require", "exports"], function (require, exports) {
         return Obj;
     })();
     exports.Obj = Obj;
+    var Bool = (function (_super) {
+        __extends(Bool, _super);
+        function Bool() {
+            _super.apply(this, arguments);
+        }
+        return Bool;
+    })(Obj);
+    exports.Bool = Bool;
     /**
      * This class encapsulates Javascript Error object. It doesn't extend it because all the error inheritance stuff
      * in Javascript is really fucked up.
@@ -196,6 +204,73 @@ define(["require", "exports"], function (require, exports) {
     })(Obj);
     exports.Seq = Seq;
     /**
+     * A finite list
+     */
+    var List = (function (_super) {
+        __extends(List, _super);
+        function List() {
+            _super.apply(this, arguments);
+        }
+        List.prototype.next = function () {
+            throw new Error("Descendants should implement this method!");
+        };
+        ;
+        List.prototype.size = function () {
+            throw new Error("Descendants should implement this method!");
+        };
+        return List;
+    })(Seq);
+    exports.List = List;
+    var Cons = (function (_super) {
+        __extends(Cons, _super);
+        function Cons() {
+            _super.apply(this, arguments);
+        }
+        Cons.prototype.next = function () {
+            return this._next;
+        };
+        Cons.prototype.size = function () {
+            return Nats.one.plus(this.next().size());
+        };
+        return Cons;
+    })(List);
+    exports.Cons = Cons;
+    exports.list = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i - 0] = arguments[_i];
+        }
+        if (args.length === 0) {
+            return exports.nil;
+        }
+    };
+    var TNil = (function (_super) {
+        __extends(TNil, _super);
+        function TNil() {
+            _super.apply(this, arguments);
+        }
+        /**
+            [].pop() returns undefined . I will be less forgiving.
+        */
+        TNil.prototype.first = function () {
+            return this._as(new Err(new Error(), "Tried to call first() on empty list!"));
+        };
+        ;
+        TNil.prototype.size = function () {
+            return Nats.zero;
+        };
+        /**
+            [1,2].slice(2,2) returns [] . I will be less forgiving.
+        */
+        TNil.prototype.next = function () {
+            return this._as(new Err(new Error(), "Tried to call next() on empty list!"));
+        };
+        ;
+        return TNil;
+    })(List);
+    exports.TNil = TNil;
+    exports.nil = new TNil();
+    /**
      * A possibly infinite natural number >= 0
      */
     var SuperNat = (function (_super) {
@@ -220,34 +295,26 @@ define(["require", "exports"], function (require, exports) {
     /**
      * Here it is, the evil infinity
      */
-    var InfinityNat = (function (_super) {
-        __extends(InfinityNat, _super);
-        function InfinityNat() {
+    var NatInfinity = (function (_super) {
+        __extends(NatInfinity, _super);
+        function NatInfinity() {
             _super.apply(this, arguments);
         }
-        InfinityNat.prototype.first = function () {
+        NatInfinity.prototype.first = function () {
             return exports.nil;
         };
-        InfinityNat.prototype.next = function () {
+        NatInfinity.prototype.next = function () {
             return this;
         };
-        InfinityNat.prototype.plus = function (n) {
+        NatInfinity.prototype.plus = function (n) {
             return this;
         };
-        InfinityNat.prototype.size = function () {
+        NatInfinity.prototype.size = function () {
             return this;
         };
-        return InfinityNat;
+        return NatInfinity;
     })(SuperNat);
-    exports.InfinityNat = InfinityNat;
-    var Bool = (function (_super) {
-        __extends(Bool, _super);
-        function Bool() {
-            _super.apply(this, arguments);
-        }
-        return Bool;
-    })(Obj);
-    exports.Bool = Bool;
+    exports.NatInfinity = NatInfinity;
     /*
     export function if_(c: Bool, th: Expr, el: Expr) {
     
@@ -271,6 +338,35 @@ define(["require", "exports"], function (require, exports) {
         return Nat;
     })(SuperNat);
     exports.Nat = Nat;
+    var NatPositive = (function (_super) {
+        __extends(NatPositive, _super);
+        function NatPositive(n) {
+            _super.call(this);
+            this._next = n;
+        }
+        NatPositive.prototype.plus = function (n) {
+            if (n instanceof NatInfinity) {
+                return n;
+            }
+            else if (exports.eq(this._next, Nats.zero)) {
+                return new NatPositive(n);
+            }
+            else {
+                return new NatPositive(this._next.plus(n));
+            }
+        };
+        NatPositive.prototype.first = function () {
+            return this._as(new Err(new Error(), "Tried to get next() of zero!"));
+        };
+        NatPositive.prototype.next = function () {
+            return this._as(new Err(new Error(), "Tried to get next() of zero!"));
+        };
+        NatPositive.prototype.size = function () {
+            return this;
+        };
+        return NatPositive;
+    })(Nat);
+    exports.NatPositive = NatPositive;
     var NatZero = (function (_super) {
         __extends(NatZero, _super);
         function NatZero() {
@@ -311,38 +407,8 @@ define(["require", "exports"], function (require, exports) {
             return this;
         };
         return NatOne;
-    })(PositiveNat);
+    })(NatPositive);
     exports.NatOne = NatOne;
-    var PositiveNat = (function (_super) {
-        __extends(PositiveNat, _super);
-        function PositiveNat(n) {
-            _super.call(this);
-            this._next = n;
-        }
-        //plus(n: Nat): PositiveNat;      
-        PositiveNat.prototype.plus = function (n) {
-            if (n instanceof InfinityNat) {
-                return n;
-            }
-            else if (exports.eq(this._next, Nats.zero)) {
-                return new PositiveNat(n);
-            }
-            else {
-                return new PositiveNat(this._next.plus(n));
-            }
-        };
-        PositiveNat.prototype.first = function () {
-            return this._as(new Err(new Error(), "Tried to get next() of zero!"));
-        };
-        PositiveNat.prototype.next = function () {
-            return this._as(new Err(new Error(), "Tried to get next() of zero!"));
-        };
-        PositiveNat.prototype.size = function () {
-            return this;
-        };
-        return PositiveNat;
-    })(Nat);
-    exports.PositiveNat = PositiveNat;
     var Nats;
     (function (Nats) {
         Nats.zero = new NatZero();
@@ -350,73 +416,6 @@ define(["require", "exports"], function (require, exports) {
         Nats.two = Nats.one.plus(Nats.one); // todo remove stupid any
         Nats.infinity = new NatZero();
     })(Nats = exports.Nats || (exports.Nats = {}));
-    /**
-     * A finite list
-     */
-    var List = (function (_super) {
-        __extends(List, _super);
-        function List() {
-            _super.apply(this, arguments);
-        }
-        List.prototype.next = function () {
-            throw new Error("Descendants should implement this method!");
-        };
-        ;
-        List.prototype.size = function () {
-            throw new Error("Descendants should implement this method!");
-        };
-        return List;
-    })(Seq);
-    exports.List = List;
-    var Cons = (function (_super) {
-        __extends(Cons, _super);
-        function Cons() {
-            _super.apply(this, arguments);
-        }
-        Cons.prototype.next = function () {
-            return this._next;
-        };
-        Cons.prototype.size = function () {
-            return Nats.one.plus(this.next().size());
-        };
-        return Cons;
-    })(List);
-    exports.Cons = Cons;
-    var TNil = (function (_super) {
-        __extends(TNil, _super);
-        function TNil() {
-            _super.apply(this, arguments);
-        }
-        /**
-            [].pop() returns undefined . I will be less forgiving.
-        */
-        TNil.prototype.first = function () {
-            return this._as(new Err(new Error(), "Tried to call first() on empty list!"));
-        };
-        ;
-        TNil.prototype.size = function () {
-            return Nats.zero;
-        };
-        /**
-            [1,2].slice(2,2) returns [] . I will be less forgiving.
-        */
-        TNil.prototype.next = function () {
-            return this._as(new Err(new Error(), "Tried to call next() on empty list!"));
-        };
-        ;
-        return TNil;
-    })(List);
-    exports.TNil = TNil;
-    exports.nil = new TNil();
-    exports.list = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i - 0] = arguments[_i];
-        }
-        if (args.length === 0) {
-            return exports.nil;
-        }
-    };
     /**
      * Returns true if two objects are structurally equal.
      * todo need spec-like version, this one is already 'too efficient'

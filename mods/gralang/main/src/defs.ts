@@ -2,8 +2,6 @@
 
 declare let Object : any;
 
-
-
 export var GRAZY_PREFIX = 'grazy';
 export var GRAZY_IRI = 'https://github.com/DavidLeoni/grazy/';
 
@@ -111,6 +109,10 @@ export class Obj<T> { // cannot write T extends Obj...
   }
 }
 
+export class Bool extends Obj<Bool> {
+}
+
+
 /**
  * This class encapsulates Javascript Error object. It doesn't extend it because all the error inheritance stuff
  * in Javascript is really fucked up.
@@ -216,165 +218,6 @@ export class Seq<T extends Obj<{}>> extends Obj<Seq<T>> {
 }
 
 
-
-
-
-
-/** 
- * A possibly infinite natural number >= 0
- */
-export class SuperNat extends Seq<Nil> {
-  next(): SuperNat {
-    throw new Error("Subclasses must implment me!");
-  };
-  plus(n: SuperNat): SuperNat {
-    throw new Error("Subclasses must implment me!");
-  };
-
-  size(): SuperNat {
-    return this;
-  }
-}
-
-/** 
- * Here it is, the evil infinity
- */
-export class InfinityNat extends SuperNat {
-
-  first(): Nil {
-    return nil;
-  }
-  next(): InfinityNat {
-    return this;
-  }
-
-  plus(n: SuperNat): InfinityNat {
-    return this;
-  }
-
-  size() {
-    return this;
-  }
-}
-
-
-export class Bool extends Obj<Bool> {
-}
-
-/*
-export function if_(c: Bool, th: Expr, el: Expr) {
-
-}
-*/
-     
-/** 
- * A finite natural number >= 0
- */
-export class Nat extends SuperNat {              
-  // Should return itself!        
-  size(): Nat {
-    return this;
-  }
-
-
-  plus(n: Nat): Nat
-  plus(n: SuperNat): SuperNat {
-    return this;
-  }
-
-}
-
-export class NatZero extends Nat {
-        
-  constructor (){
-    super();    
-  }        
-        
-  //plus(n: NatZero): NatZero
-  //plus(n: PositiveNat): PositiveNat
-  plus(n: Nat|NatZero|PositiveNat): Nat  
-  plus(n: SuperNat): SuperNat {
-    if (n instanceof NatZero) {
-      return this;
-    } else {
-      return <any> n;
-    }
-  }
-
-  first(): Nil {
-    return <any> this._as(new Err(new Error(), "Tried to get next() of zero!"));
-  }
-
-  next(): Nat {
-    return <any> this._as(new Err(new Error(), "Tried to get next() of zero!"));
-  }
-
-  size(): NatZero {
-    return this;
-  }
-}
-
-export class NatOne extends PositiveNat {
-
-  constructor(){
-    super(Nats.zero);
-  }
-
-  first(): Nil {
-    return nil;
-  }
-
-  next(): NatZero {
-    return Nats.zero;
-  }
-
-  size(): NatOne {
-    return this;
-  }
-}
-
-
-export class PositiveNat extends Nat {
-
-  private _next: Nat;
-
-  constructor(n: Nat) {
-    super();
-    this._next = n;
-  }  
-  
-  //plus(n: Nat): PositiveNat;      
-  plus(n: SuperNat): SuperNat {
-            
-    if (n instanceof InfinityNat) {
-      return n;
-    } else if (eq(this._next, Nats.zero)) {
-      return new PositiveNat(<Nat> n);
-    } else {
-      return new PositiveNat(this._next.plus(<Nat> n));
-    }            
-
-  }
-
-  first(): Nil {
-    return <any> this._as(new Err(new Error(), "Tried to get next() of zero!"));
-  }
-
-  next(): Nat {
-    return <any> this._as(new Err(new Error(), "Tried to get next() of zero!"));
-  }
-
-  size(): PositiveNat {
-    return this;
-  }
-}
-
-export module Nats {
-  export const zero: NatZero = new NatZero();
-  export const one: NatOne = new NatOne();
-  export const two: PositiveNat = <any> one.plus(one); // todo remove stupid any
-  export const infinity: InfinityNat = new NatZero();
-}
      
 /**
  * A finite list
@@ -398,6 +241,17 @@ export class Cons<T extends Obj<{}>> extends List<T> {
   }
 
 }
+
+
+
+
+
+export let list = function <T extends Obj<{}>>(...args: T[]): List<T> {
+  if (args.length === 0) {
+    return nil;
+  }
+}
+
 
 
 export class TNil<T extends Obj<{}>> extends List<T> {
@@ -425,10 +279,161 @@ export type Nil = TNil<any>;
 
 export let nil: Nil = new TNil();
 
-export let list = function <T extends Obj<{}>>(...args: T[]): List<T> {
-  if (args.length === 0) {
+
+
+/** 
+ * A possibly infinite natural number >= 0
+ */
+export class SuperNat extends Seq<Nil> {
+  next(): SuperNat {
+    throw new Error("Subclasses must implment me!");
+  };
+  plus(n: SuperNat): SuperNat {
+    throw new Error("Subclasses must implment me!");
+  };
+
+  size(): SuperNat {
+    return this;
+  }
+}
+
+/** 
+ * Here it is, the evil infinity
+ */
+export class NatInfinity extends SuperNat {
+
+  first(): Nil {
     return nil;
   }
+  next(): NatInfinity {
+    return this;
+  }
+
+  plus(n: SuperNat): NatInfinity {
+    return this;
+  }
+
+  size() {
+    return this;
+  }
+}
+
+
+
+/*
+export function if_(c: Bool, th: Expr, el: Expr) {
+
+}
+*/
+     
+/** 
+ * A finite natural number >= 0
+ */
+export class Nat extends SuperNat {              
+  // Should return itself!        
+  size(): Nat {
+    return this;
+  }
+
+
+  plus(n: Nat): Nat
+  plus(n: SuperNat): SuperNat {
+    return this;
+  }
+
+}
+
+
+export class NatPositive extends Nat {
+
+  private _next: Nat;
+
+  constructor(n: Nat) {
+    super();
+    this._next = n;
+  }  
+  
+  plus(n: Nat): NatPositive;      
+  plus(n: SuperNat): SuperNat {
+            
+    if (n instanceof NatInfinity) {
+      return n;
+    } else if (eq(this._next, Nats.zero)) {
+      return new NatPositive(<Nat> n);
+    } else {
+      return new NatPositive(this._next.plus(<Nat> n));
+    }            
+
+  }
+
+  first(): Nil {
+    return <any> this._as(new Err(new Error(), "Tried to get next() of zero!"));
+  }
+
+  next(): Nat {
+    return <any> this._as(new Err(new Error(), "Tried to get next() of zero!"));
+  }
+
+  size(): NatPositive {
+    return this;
+  }
+}
+
+export class NatZero extends Nat {
+        
+  constructor (){
+    super();    
+  }        
+        
+  plus(n: NatZero): NatZero
+  plus(n: NatPositive): NatPositive
+  plus(n: Nat): Nat  
+  plus(n: SuperNat): SuperNat {
+    if (n instanceof NatZero) {
+      return this;
+    } else {
+      return <any> n;
+    }
+  }
+
+  first(): Nil {
+    return <any> this._as(new Err(new Error(), "Tried to get next() of zero!"));
+  }
+
+  next(): Nat {
+    return <any> this._as(new Err(new Error(), "Tried to get next() of zero!"));
+  }
+
+  size(): NatZero {
+    return this;
+  }
+}
+
+export class NatOne extends NatPositive {
+
+  constructor(){
+    super(Nats.zero);
+  }
+
+  first(): Nil {
+    return nil;
+  }
+
+  next(): NatZero {
+    return Nats.zero;
+  }
+
+  size(): NatOne {
+    return this;
+  }
+}
+
+
+export module Nats {
+  export const zero: NatZero = new NatZero();
+  export const one: NatOne = new NatOne();
+  export const two: NatPositive = <any> one.plus(one); // todo remove stupid any
+  export const infinity: NatInfinity = new NatZero();
 }
 
 /**

@@ -1,16 +1,17 @@
-define(["require", "exports", '../../main/src/gralang', './test-modules-4'], function (require, exports, gralang_1, test_modules_4_1) {
-    var Trees = gralang_1.default.Trees;
-    var Nats = gralang_1.default.Nats;
-    var List = gralang_1.default.List;
-    var GrazyErr = gralang_1.default.Err;
-    var TestSuite = gralang_1.default.test.TestSuite;
-    var assertEquals = gralang_1.default.test.assertIs;
-    var assertNotEquals = gralang_1.default.test.assertNotIs;
-    var assertEq = gralang_1.default.test.assertEq;
-    var assertNotEq = gralang_1.default.test.assertNotEq;
-    var report = gralang_1.default.report;
-    var t = gralang_1.default.nil;
-    exports.testGralang = gralang_1.default;
+define(["require", "exports", '../../main/src/defs', './test-modules-4'], function (require, exports, g, test_modules_4_1) {
+    var Trees = g.Trees;
+    var Nats = g.Nats;
+    var List = g.List;
+    var Err = g.Err;
+    var Obj = g.Obj;
+    var TestSuite = g.test.TestSuite;
+    var assertIs = g.test.assertIs;
+    var assertNotIs = g.test.assertNotIs;
+    var assertEq = g.test.assertEq;
+    var assertNotEq = g.test.assertNotEq;
+    var report = g.report;
+    var t = g.nil;
+    exports.testGralang = g;
     exports.testNice = test_modules_4_1.default;
     var getCs = function (n) { return n.cs ? n.cs : []; };
     var sumCs = function (field, n, mcs) {
@@ -24,74 +25,128 @@ define(["require", "exports", '../../main/src/gralang', './test-modules-4'], fun
     exports.tests = {
         /** 'testMethodName' should be visualized in UI */
         testMethodName: function () { return null; },
-        testAssertEquals_1: function () {
-            var res = assertEquals(true, true);
+        testAssertIs_1: function () {
+            var res = assertIs(true, true);
             if (res) {
-                return new gralang_1.default.NotEqErr(new Error(), null, res);
+                return new g.NotEqErr(new Error(), null, res);
             }
             else {
                 return null;
             }
         },
-        testAssertEquals_2: function () {
-            var res = assertEquals(true, false);
+        testAssertIs_2: function () {
+            var res = assertIs(true, false);
             if (res) {
                 return null;
             }
             else {
-                return new gralang_1.default.NotEqErr(new Error(), null, res);
+                return new g.NotEqErr(new Error(), null, res);
             }
         },
-        testAssertNotEquals_1: function () {
-            var res = assertNotEquals(true, true);
+        testAssertNotIs_1: function () {
+            var res = assertNotIs(true, true);
             if (res) {
                 return null;
             }
             else {
-                return new gralang_1.default.EqErr(new Error(), res);
+                return new g.EqErr(new Error(), res);
             }
         },
-        testAssertNotEquals_2: function () {
-            var res = assertNotEquals(true, false);
+        testAssertNotIs_2: function () {
+            var res = assertNotIs(true, false);
             if (res) {
-                return new gralang_1.default.NotEqErr(new Error(), null, res);
+                return new g.NotEqErr(new Error(), null, res);
             }
             else {
                 return null;
             }
         },
-        testModuleImport: function () { return assertEquals("a", test_modules_4_1.default.Trial("a").sing()); },
-        testGetCsType: function () { return assertEquals("array", $.type(getCs({ cs: [1, 2] }))); },
-        testGetCsLength: function () { return assertEquals(2, getCs({ cs: [1, 2] }).length); },
-        testGetCs_1: function () { return assertEquals(1, getCs({ cs: [1, 2] }).first()); },
-        testGetCs_2: function () { return assertEquals(2, getCs({ cs: [1, 2] }).last()); },
+        testEq_1: function () {
+            var res = g.eq(g.Objs.empty, g.Objs.empty);
+            if (res) {
+                return null;
+            }
+            else {
+                return new g.NotEqErr(new Error(), true, res);
+            }
+        },
+        testEq_2: function () {
+            var res = g.eq(g.Objs.empty, Nats.zero);
+            if (res) {
+                return new g.NotEqErr(new Error(), false, res);
+            }
+            else {
+                return null;
+            }
+        },
+        testAssertEq_1: function () {
+            var res = assertEq(g.Objs.empty, g.Objs.empty);
+            if (res) {
+                return new g.NotEqErr(new Error(), null, res);
+            }
+            else {
+                return null;
+            }
+        },
+        testAssertEq_2: function () {
+            var res = assertEq(g.Objs.empty, Nats.zero);
+            if (res) {
+                return null;
+            }
+            else {
+                return new g.NotEqErr(new Error(), "Instance of an error!", res);
+            }
+        },
+        testAssertNotEq_1: function () {
+            var res = assertNotEq(g.Objs.empty, g.Objs.empty);
+            if (res) {
+                return null;
+            }
+            else {
+                return new g.EqErr(new Error(), res);
+            }
+        },
+        testAssertNotEq_2: function () {
+            var res = assertNotEq(g.Objs.empty, Nats.zero);
+            if (res) {
+                return new g.NotEqErr(new Error(), null, res);
+            }
+            else {
+                return null;
+            }
+        },
+        testModuleImport: function () { return assertIs("a", test_modules_4_1.default.Trial("a").sing()); },
+        testGetCsType: function () { return assertIs("array", $.type(getCs({ cs: [1, 2] }))); },
+        testGetCsLength: function () { return assertIs(2, getCs({ cs: [1, 2] }).length); },
+        testGetCs_1: function () { return assertIs(1, getCs({ cs: [1, 2] }).first()); },
+        testGetCs_2: function () { return assertIs(2, getCs({ cs: [1, 2] }).last()); },
         testZeroPlusZero: function () { return assertEq(Nats.zero, Nats.zero.plus(Nats.zero)); },
         testZeroPlusOne: function () { return assertEq(Nats.one, Nats.zero.plus(Nats.one)); },
-        testEmptyTree: function () { return assertEquals(3, Trees.fold({}, function (n) { return []; }, function (n) { return 3; })); },
+        testEmptyTree: function () { return assertIs(3, Trees.fold({}, function (n) { return []; }, function (n) { return 3; })); },
         // nodes can be either numbers or {cs:[...]}
-        testSumOneNodeTree: function () { return assertEquals(3, Trees.fold({ cs: [1, 2] }, getCs, sumCs)); },
+        testSumOneNodeTree: function () { return assertIs(3, Trees.fold({ cs: [1, 2] }, getCs, sumCs)); },
         // nodes can be either numbers or {cs:[...]}
-        testSumManyNodesTree_1: function () { return assertEquals(1, Trees.fold({
+        testSumManyNodesTree_1: function () { return assertIs(1, Trees.fold({
             cs: [
                 { cs: [1] }
             ]
         }, getCs, sumCs)); },
         // nodes can be either numbers or {cs:[...]}
-        testSumManyNodesTree_2: function () { return assertEquals(6, Trees.fold({
+        testSumManyNodesTree_2: function () { return assertIs(6, Trees.fold({
             cs: [
                 { cs: [1] },
                 { cs: [2, 3] }
             ]
         }, getCs, sumCs)); },
-        testHeight_0: function () { return assertEquals(0, Trees.height({}, getCs)); },
-        testHeight_1: function () { return assertEquals(1, Trees.height({ cs: [{}] }, getCs)); },
-        testHeight_2: function () { return assertEquals(2, Trees.height({
+        testHeight_0: function () { return assertIs(0, Trees.height({}, getCs)); },
+        testHeight_1: function () { return assertIs(1, Trees.height({ cs: [{}] }, getCs)); },
+        testHeight_2: function () { return assertIs(2, Trees.height({
             cs: [{
                     cs: [{}
                     ]
                 }]
         }, getCs)); },
-        testHeight_3: function () { return assertEquals(3, Trees.height({
+        testHeight_3: function () { return assertIs(3, Trees.height({
             cs: [{
                     cs: [{},
                         { cs: [{}] }

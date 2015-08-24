@@ -47,6 +47,22 @@ export enum ObjStatus {
 
 
 /**
+ * Returns true if two objects are structurally equal.
+ * todo need spec-like version, this one is already 'too efficient'
+ */
+export let eq = function (a : Obj<any>, b : Obj<any>) : boolean {
+  let t = Object.is(a,  b);
+  if (!t){
+    for (let key of Object.keys(a)){
+        if (!eq(a[key], a[key])){
+          return false;
+        }        
+    }    
+  }  
+  return true;
+}  
+
+/**
  * todo p1 add decorator for creating withers, 
  * see http://stackoverflow.com/questions/31224574/generate-generic-getters-and-setters-for-entity-properties-using-decorators
  */
@@ -109,8 +125,6 @@ export class Obj<T> { // cannot write T extends Obj...
   }
 }
 
-export class Bool extends Obj<Bool> {
-}
 
 
 /**
@@ -200,6 +214,12 @@ export class NotEqErr extends Err {
   expected: any;
 }
 
+export module Objs {
+  export let empty = new Obj();
+}
+
+export class Bool extends Obj<Bool> {
+}
 
 
 /**
@@ -436,21 +456,6 @@ export module Nats {
   export const infinity: NatInfinity = new NatZero();
 }
 
-/**
- * Returns true if two objects are structurally equal.
- * todo need spec-like version, this one is already 'too efficient'
- */
-export let eq = function (a : Obj<any>, b : Obj<any>) : boolean {
-  let t = Object.is(a,  b);
-  if (!t){
-    for (let key of Object.keys(a)){
-        if (!eq(a[key], a[key])){
-          return false;
-        }        
-    }    
-  }  
-  return true;
-}  
 
 
 /**
@@ -493,7 +498,7 @@ export module test {
    * @return null if no error occurred
   */
   export function assertIs(expected, actual): Err {
-    var res = Object.is(actual, expected);
+    var res = Object.is(expected, actual);
     if (res) {
       return null;
     } else {
@@ -507,7 +512,7 @@ export module test {
    * @return null if no error occurred
   */
   export function assertNotIs(notExpected, actual): Err {
-    var res = Object.is(actual, notExpected);
+    var res = Object.is(notExpected, actual);
     if (res) {
       return new EqErr(new Error(), actual);
     } else {
@@ -520,8 +525,8 @@ export module test {
    * Doesn't throw any exception,
    * @return null if no error occurred
   */
-  export function assertEq(expected, actual): Err {
-    var res = eq(actual, expected);
+  export function assertEq(expected : Obj<any>, actual : Obj<any>): Err {
+    var res = eq(expected, actual);
     if (res) {
       return null;
     } else {
@@ -534,8 +539,8 @@ export module test {
    * Doesn't throw any exception
    * @return null if no error occurred
   */
-  export function assertNotEq(notExpected, actual): Err {
-    var res = eq(actual, notExpected);
+  export function assertNotEq(notExpected : Obj<any>, actual  : Obj<any>): Err {
+    var res = eq(notExpected, actual);
     if (res) {
       return new EqErr(new Error(), actual);
     } else {

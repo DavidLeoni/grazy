@@ -1,29 +1,31 @@
 
-import gralang from '../../main/src/gralang';
+import * as g from '../../main/src/defs';
 
 // notice writing import * as nice does NOT work!!
 
 import nice from './test-modules-4'
 
 
-let Trees = gralang.Trees;
-let Nats = gralang.Nats;
-let List = gralang.List;
-let GrazyErr = gralang.Err;
-let TestSuite = gralang.test.TestSuite;
-let assertEquals = gralang.test.assertIs;
-let assertNotEquals = gralang.test.assertNotIs;
-let assertEq = gralang.test.assertEq;
-let assertNotEq = gralang.test.assertNotEq;
+let Trees = g.Trees;
+let Nats = g.Nats;
+let List = g.List;
+let Err = g.Err;
+let Obj = g.Obj;
+let TestSuite = g.test.TestSuite;
+let assertIs = g.test.assertIs;
+let assertNotIs = g.test.assertNotIs;
+let assertEq = g.test.assertEq;
+let assertNotEq = g.test.assertNotEq;
 
-let report = gralang.report;
 
-let t : gralang.Nil = gralang.nil; 
+let report = g.report;
+
+let t : g.Nil = g.nil; 
 
 
 declare var $: any; // as elegant as it can be
 
-export var testGralang = gralang;
+export var testGralang = g;
 export var testNice = nice;
 
 var getCs = (n) => n.cs ? n.cs : [];
@@ -40,57 +42,105 @@ var sumCs = (field, n, mcs: number[]): number => {
 export var tests = {
     /** 'testMethodName' should be visualized in UI */
     testMethodName: () => null,    
-    testAssertEquals_1: () => {
-        var res = assertEquals(true, true);
+    testAssertIs_1: () => {
+        var res = assertIs(true, true);
         if (res) {
-            return new gralang.NotEqErr(new Error(), null, res);
+            return new g.NotEqErr(new Error(), null, res);
         } else {
             return null;
         }
     },
-    testAssertEquals_2: () => {
-        var res = assertEquals(true, false);
+    testAssertIs_2: () => {
+        var res = assertIs(true, false);
         if (res) {
             return null;
         } else {
-            return new gralang.NotEqErr(new Error(), null, res);
+            return new g.NotEqErr(new Error(), null, res);
         }
     },
-    testAssertNotEquals_1: () => {
-        var res = assertNotEquals(true, true);
+    testAssertNotIs_1: () => {
+        var res = assertNotIs(true, true);
         if (res) {
             return null;
         } else {
-            return new gralang.EqErr(new Error(), res);
+            return new g.EqErr(new Error(), res);
         }
     },
-    testAssertNotEquals_2: () => {
-        var res = assertNotEquals(true, false);
+    testAssertNotIs_2: () => {
+        var res = assertNotIs(true, false);
         if (res) {
-            return new gralang.NotEqErr(new Error(), null, res);
+            return new g.NotEqErr(new Error(), null, res);
         } else {
             return null;
         }
     },
+    testEq_1: () => {
+        var res = g.eq(g.Objs.empty, g.Objs.empty);
+        if (res) {
+            return null;
+        } else {
+            return new g.NotEqErr(new Error(), true, res);
+        }
+    },
+    testEq_2: () => {
+        var res = g.eq(g.Objs.empty, Nats.zero);
+        if (res) {
+            return new g.NotEqErr(new Error(), false, res);            
+        } else {
+            return null;
+        }
+    },    
+    testAssertEq_1: () => {
+        var res = assertEq(g.Objs.empty, g.Objs.empty);
+        if (res) {
+            return new g.NotEqErr(new Error(), null, res);
+        } else {
+            return null;
+        }
+    },
+    testAssertEq_2: () => {
+        var res = assertEq(g.Objs.empty, Nats.zero);
+        if (res) {
+            return null;
+        } else {
+            return new g.NotEqErr(new Error(), "Instance of an error!", res);
+        }
+    },
+    testAssertNotEq_1: () => {
+        var res = assertNotEq(g.Objs.empty, g.Objs.empty);
+        if (res) {
+            return null;
+        } else {
+            return new g.EqErr(new Error(), res);
+        }
+    },
+    testAssertNotEq_2: () => {
+        var res = assertNotEq(g.Objs.empty, Nats.zero);
+        if (res) {
+            return new g.NotEqErr(new Error(), null, res);
+        } else {
+            return null;
+        }
+    },    
     
-    testModuleImport: () => assertEquals("a", nice.Trial("a").sing()),
+    testModuleImport: () => assertIs("a", nice.Trial("a").sing()),
         
-    testGetCsType: () => assertEquals("array", $.type(getCs({ cs: [1, 2] }))),
-    testGetCsLength: () => assertEquals(2, getCs({ cs: [1, 2] }).length),
-    testGetCs_1: () => assertEquals(1, getCs({ cs: [1, 2] }).first()),
-    testGetCs_2: () => assertEquals(2, getCs({ cs: [1, 2] }).last()),
+    testGetCsType: () => assertIs("array", $.type(getCs({ cs: [1, 2] }))),
+    testGetCsLength: () => assertIs(2, getCs({ cs: [1, 2] }).length),
+    testGetCs_1: () => assertIs(1, getCs({ cs: [1, 2] }).first()),
+    testGetCs_2: () => assertIs(2, getCs({ cs: [1, 2] }).last()),
     testZeroPlusZero: ()=> assertEq(Nats.zero, Nats.zero.plus(Nats.zero)),
     testZeroPlusOne: ()=> assertEq(Nats.one, Nats.zero.plus(Nats.one)),
-    testEmptyTree: () => assertEquals(3,
+    testEmptyTree: () => assertIs(3,
         Trees.fold({},
             (n) => [],
             (n) => 3)),
     // nodes can be either numbers or {cs:[...]}
-    testSumOneNodeTree: () => assertEquals(3, Trees.fold({ cs: [1, 2] },
+    testSumOneNodeTree: () => assertIs(3, Trees.fold({ cs: [1, 2] },
         getCs,
         sumCs)),
     // nodes can be either numbers or {cs:[...]}
-    testSumManyNodesTree_1: () => assertEquals(1,
+    testSumManyNodesTree_1: () => assertIs(1,
         Trees.fold({
             cs: [
                 { cs: [1] }
@@ -100,7 +150,7 @@ export var tests = {
             sumCs)),
 
     // nodes can be either numbers or {cs:[...]}
-    testSumManyNodesTree_2: () => assertEquals(6,
+    testSumManyNodesTree_2: () => assertIs(6,
         Trees.fold({
             cs: [
                 { cs: [1] },
@@ -109,15 +159,15 @@ export var tests = {
         },
             getCs,
             sumCs)),
-    testHeight_0: () => assertEquals(0, Trees.height({}, getCs)),
-    testHeight_1: () => assertEquals(1, Trees.height({ cs: [{}] }, getCs)),
-    testHeight_2: () => assertEquals(2, Trees.height({
+    testHeight_0: () => assertIs(0, Trees.height({}, getCs)),
+    testHeight_1: () => assertIs(1, Trees.height({ cs: [{}] }, getCs)),
+    testHeight_2: () => assertIs(2, Trees.height({
         cs: [{
             cs: [{}
             ]
         }]
     }, getCs)),
-    testHeight_3: () => assertEquals(3, Trees.height({
+    testHeight_3: () => assertIs(3, Trees.height({
         cs: [{
             cs: [{},
                 { cs: [{}] }
@@ -130,7 +180,7 @@ export var tests = {
 
 
 
-var runTests = function(testSuite: gralang.test.TestSuite, targetDiv) {
+var runTests = function(testSuite: g.test.TestSuite, targetDiv) {
 
     var br = () => targetDiv.append($('<br/>'));
 
@@ -221,7 +271,7 @@ var getParameterByName = function(name): string {
 }
 
 var singleTestName = getParameterByName("test");
-var testSuite: gralang.test.TestSuite;
+var testSuite: g.test.TestSuite;
 var suiteName = "Gralang";
 if (singleTestName) {
     if (tests[singleTestName]) {

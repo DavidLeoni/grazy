@@ -41,6 +41,22 @@ define(["require", "exports"], function (require, exports) {
     })(exports.ObjStatus || (exports.ObjStatus = {}));
     var ObjStatus = exports.ObjStatus;
     /**
+     * Returns true if two objects are structurally equal.
+     * todo need spec-like version, this one is already 'too efficient'
+     */
+    exports.eq = function (a, b) {
+        var t = Object.is(a, b);
+        if (!t) {
+            for (var _i = 0, _a = Object.keys(a); _i < _a.length; _i++) {
+                var key = _a[_i];
+                if (!exports.eq(a[key], a[key])) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    };
+    /**
      * todo p1 add decorator for creating withers,
      * see http://stackoverflow.com/questions/31224574/generate-generic-getters-and-setters-for-entity-properties-using-decorators
      */
@@ -95,14 +111,6 @@ define(["require", "exports"], function (require, exports) {
         return Obj;
     })();
     exports.Obj = Obj;
-    var Bool = (function (_super) {
-        __extends(Bool, _super);
-        function Bool() {
-            _super.apply(this, arguments);
-        }
-        return Bool;
-    })(Obj);
-    exports.Bool = Bool;
     /**
      * This class encapsulates Javascript Error object. It doesn't extend it because all the error inheritance stuff
      * in Javascript is really fucked up.
@@ -180,6 +188,18 @@ define(["require", "exports"], function (require, exports) {
         return NotEqErr;
     })(Err);
     exports.NotEqErr = NotEqErr;
+    var Objs;
+    (function (Objs) {
+        Objs.empty = new Obj();
+    })(Objs = exports.Objs || (exports.Objs = {}));
+    var Bool = (function (_super) {
+        __extends(Bool, _super);
+        function Bool() {
+            _super.apply(this, arguments);
+        }
+        return Bool;
+    })(Obj);
+    exports.Bool = Bool;
     /**
      * A lazy sequence, possibly infinite
      */
@@ -417,22 +437,6 @@ define(["require", "exports"], function (require, exports) {
         Nats.infinity = new NatZero();
     })(Nats = exports.Nats || (exports.Nats = {}));
     /**
-     * Returns true if two objects are structurally equal.
-     * todo need spec-like version, this one is already 'too efficient'
-     */
-    exports.eq = function (a, b) {
-        var t = Object.is(a, b);
-        if (!t) {
-            for (var _i = 0, _a = Object.keys(a); _i < _a.length; _i++) {
-                var key = _a[_i];
-                if (!exports.eq(a[key], a[key])) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    };
-    /**
      * Takes a variable number of arguments and displays them as concatenated strings in an alert message, plus it calls console.error with the same arguments. Usage example:
      * signal(new Error(), "We got a problem", "Expected: ", 3, " got:", 2 + 2);
      * @returns {GrazyErr}
@@ -461,7 +465,7 @@ define(["require", "exports"], function (require, exports) {
          * @return null if no error occurred
         */
         function assertIs(expected, actual) {
-            var res = Object.is(actual, expected);
+            var res = Object.is(expected, actual);
             if (res) {
                 return null;
             }
@@ -476,7 +480,7 @@ define(["require", "exports"], function (require, exports) {
          * @return null if no error occurred
         */
         function assertNotIs(notExpected, actual) {
-            var res = Object.is(actual, notExpected);
+            var res = Object.is(notExpected, actual);
             if (res) {
                 return new EqErr(new Error(), actual);
             }
@@ -490,7 +494,7 @@ define(["require", "exports"], function (require, exports) {
          * @return null if no error occurred
         */
         function assertEq(expected, actual) {
-            var res = exports.eq(actual, expected);
+            var res = exports.eq(expected, actual);
             if (res) {
                 return null;
             }
@@ -505,7 +509,7 @@ define(["require", "exports"], function (require, exports) {
          * @return null if no error occurred
         */
         function assertNotEq(notExpected, actual) {
-            var res = exports.eq(actual, notExpected);
+            var res = exports.eq(notExpected, actual);
             if (res) {
                 return new EqErr(new Error(), actual);
             }

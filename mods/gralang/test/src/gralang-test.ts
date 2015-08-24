@@ -1,5 +1,5 @@
 
-import gralang from '../../main/src/gralang';
+import * as gralang from '../../main/src/defs';
 
 // notice writing import * as nice does NOT work!!
 
@@ -7,11 +7,15 @@ import nice from './test-modules-4'
 
 
 let Trees = gralang.Trees;
+let Nats = gralang.Nats;
 let List = gralang.List;
 let GrazyErr = gralang.Err;
 let TestSuite = gralang.test.TestSuite;
-let assertEquals = gralang.test.assertEquals;
-let assertNotEquals = gralang.test.assertNotEquals;
+let assertEquals = gralang.test.assertIs;
+let assertNotEquals = gralang.test.assertNotIs;
+let assertEq = gralang.test.assertEq;
+let assertNotEq = gralang.test.assertNotEq;
+
 let report = gralang.report;
 
 let t : gralang.Nil = gralang.nil; 
@@ -22,7 +26,7 @@ declare var $: any; // as elegant as it can be
 export var testGralang = gralang;
 export var testNice = nice;
 
-var getCs = (n) => n.cs ? n.cs : List();
+var getCs = (n) => n.cs ? n.cs : [];
 var sumCs = (field, n, mcs: number[]): number => {
     console.log("inside sumCs  makeM: ", "parentField: ", field, "n: ", n, "cs: ", mcs, "mcs.toArray(): ", mcs);
     return mcs.length > 0 ?
@@ -75,6 +79,8 @@ export var tests = {
     testGetCsLength: () => assertEquals(2, getCs({ cs: [1, 2] }).length),
     testGetCs_1: () => assertEquals(1, getCs({ cs: [1, 2] }).first()),
     testGetCs_2: () => assertEquals(2, getCs({ cs: [1, 2] }).last()),
+    testZeroPlusZero: ()=> assertEq(Nats.zero, Nats.zero.plus(Nats.zero)),
+    testZeroPlusOne: ()=> assertEq(Nats.one, Nats.zero.plus(Nats.one)),
     testEmptyTree: () => assertEquals(3,
         Trees.fold({},
             (n) => [],

@@ -51,7 +51,34 @@ define(["require", "exports"], function (require, exports) {
              * Eventual error is status is 'ERROR'
              */
             this.__error = Errors.NONE;
+            this.__status = ObjStatus.TO_CALCULATE;
+            this.__error = Errors.NONE;
         }
+        Obj.prototype.__clone = function () {
+            var ret = {};
+            for (var _i = 0, _a = Object.keys(this); _i < _a.length; _i++) {
+                var k = _a[_i];
+                ret[k] = this[k];
+            }
+            return ret;
+        };
+        Obj.prototype._as = function (err) {
+            var ret = this.__clone();
+            ret.__status = ObjStatus.ERROR;
+            if (err) {
+                ret.__error = err;
+            }
+            else {
+                ret.__error = new Err(new Error(), "Tried to set error on ", this, " but forgot to pass Err object!!");
+            }
+            return ret;
+        };
+        Obj.prototype._error = function () {
+            return this.__error;
+        };
+        Obj.prototype._status = function () {
+            return this.__status;
+        };
         /**
          * Returns new object with property prop set to v. Property MUST belong to object type definition propoerties
          * TODO this currently doesn't do any type checking (sic), maybe maybe we can fix it.
@@ -61,11 +88,7 @@ define(["require", "exports"], function (require, exports) {
          *
          */
         Obj.prototype.with = function (prop, v) {
-            var ret = {};
-            for (var _i = 0, _a = Object.keys(this); _i < _a.length; _i++) {
-                var k = _a[_i];
-                ret[k] = this[k];
-            }
+            var ret = this.__clone();
             ret[prop] = v;
             return ret;
         };
@@ -149,27 +172,267 @@ define(["require", "exports"], function (require, exports) {
         return NotEqErr;
     })(Err);
     exports.NotEqErr = NotEqErr;
-    var Nats;
-    (function (Nats) {
-    })(Nats = exports.Nats || (exports.Nats = {}));
-    var Bool = (function () {
+    /**
+     * A lazy sequence, possibly infinite
+     */
+    var Seq = (function (_super) {
+        __extends(Seq, _super);
+        function Seq() {
+            _super.apply(this, arguments);
+        }
+        Seq.prototype.first = function () {
+            throw new Error("Subclasses must implment me!");
+        };
+        ;
+        Seq.prototype.next = function () {
+            throw new Error("Subclasses must implment me!");
+        };
+        ;
+        Seq.prototype.size = function () {
+            throw new Error("Subclasses must implment me!");
+        };
+        ;
+        return Seq;
+    })(Obj);
+    exports.Seq = Seq;
+    /**
+     * A possibly infinite natural number >= 0
+     */
+    var SuperNat = (function (_super) {
+        __extends(SuperNat, _super);
+        function SuperNat() {
+            _super.apply(this, arguments);
+        }
+        SuperNat.prototype.next = function () {
+            throw new Error("Subclasses must implment me!");
+        };
+        ;
+        SuperNat.prototype.plus = function (n) {
+            throw new Error("Subclasses must implment me!");
+        };
+        ;
+        SuperNat.prototype.size = function () {
+            return this;
+        };
+        return SuperNat;
+    })(Seq);
+    exports.SuperNat = SuperNat;
+    /**
+     * Here it is, the evil infinity
+     */
+    var InfinityNat = (function (_super) {
+        __extends(InfinityNat, _super);
+        function InfinityNat() {
+            _super.apply(this, arguments);
+        }
+        InfinityNat.prototype.first = function () {
+            return exports.nil;
+        };
+        InfinityNat.prototype.next = function () {
+            return this;
+        };
+        InfinityNat.prototype.plus = function (n) {
+            return this;
+        };
+        InfinityNat.prototype.size = function () {
+            return this;
+        };
+        return InfinityNat;
+    })(SuperNat);
+    exports.InfinityNat = InfinityNat;
+    var Bool = (function (_super) {
+        __extends(Bool, _super);
         function Bool() {
+            _super.apply(this, arguments);
         }
         return Bool;
-    })();
+    })(Obj);
     exports.Bool = Bool;
-    function if_(c, t, e) {
+    /*
+    export function if_(c: Bool, th: Expr, el: Expr) {
+    
     }
-    exports.if_ = if_;
-    var Cons = (function () {
+    */
+    /**
+     * A finite natural number >= 0
+     */
+    var Nat = (function (_super) {
+        __extends(Nat, _super);
+        function Nat() {
+            _super.apply(this, arguments);
+        }
+        // Should return itself!        
+        Nat.prototype.size = function () {
+            return this;
+        };
+        Nat.prototype.plus = function (n) {
+            return this;
+        };
+        return Nat;
+    })(SuperNat);
+    exports.Nat = Nat;
+    var NatZero = (function (_super) {
+        __extends(NatZero, _super);
+        function NatZero() {
+            _super.call(this);
+        }
+        NatZero.prototype.plus = function (n) {
+            if (n instanceof NatZero) {
+                return this;
+            }
+            else {
+                return n;
+            }
+        };
+        NatZero.prototype.first = function () {
+            return this._as(new Err(new Error(), "Tried to get next() of zero!"));
+        };
+        NatZero.prototype.next = function () {
+            return this._as(new Err(new Error(), "Tried to get next() of zero!"));
+        };
+        NatZero.prototype.size = function () {
+            return this;
+        };
+        return NatZero;
+    })(Nat);
+    exports.NatZero = NatZero;
+    var NatOne = (function (_super) {
+        __extends(NatOne, _super);
+        function NatOne() {
+            _super.call(this, Nats.zero);
+        }
+        NatOne.prototype.first = function () {
+            return exports.nil;
+        };
+        NatOne.prototype.next = function () {
+            return Nats.zero;
+        };
+        NatOne.prototype.size = function () {
+            return this;
+        };
+        return NatOne;
+    })(PositiveNat);
+    exports.NatOne = NatOne;
+    var PositiveNat = (function (_super) {
+        __extends(PositiveNat, _super);
+        function PositiveNat(n) {
+            _super.call(this);
+            this._next = n;
+        }
+        //plus(n: Nat): PositiveNat;      
+        PositiveNat.prototype.plus = function (n) {
+            if (n instanceof InfinityNat) {
+                return n;
+            }
+            else if (exports.eq(this._next, Nats.zero)) {
+                return new PositiveNat(n);
+            }
+            else {
+                return new PositiveNat(this._next.plus(n));
+            }
+        };
+        PositiveNat.prototype.first = function () {
+            return this._as(new Err(new Error(), "Tried to get next() of zero!"));
+        };
+        PositiveNat.prototype.next = function () {
+            return this._as(new Err(new Error(), "Tried to get next() of zero!"));
+        };
+        PositiveNat.prototype.size = function () {
+            return this;
+        };
+        return PositiveNat;
+    })(Nat);
+    exports.PositiveNat = PositiveNat;
+    var Nats;
+    (function (Nats) {
+        Nats.zero = new NatZero();
+        Nats.one = new NatOne();
+        Nats.two = Nats.one.plus(Nats.one); // todo remove stupid any
+        Nats.infinity = new NatZero();
+    })(Nats = exports.Nats || (exports.Nats = {}));
+    /**
+     * A finite list
+     */
+    var List = (function (_super) {
+        __extends(List, _super);
+        function List() {
+            _super.apply(this, arguments);
+        }
+        List.prototype.next = function () {
+            throw new Error("Descendants should implement this method!");
+        };
+        ;
+        List.prototype.size = function () {
+            throw new Error("Descendants should implement this method!");
+        };
+        return List;
+    })(Seq);
+    exports.List = List;
+    var Cons = (function (_super) {
+        __extends(Cons, _super);
         function Cons() {
+            _super.apply(this, arguments);
         }
         Cons.prototype.next = function () {
-            throw new Error("todo implement me");
+            return this._next;
+        };
+        Cons.prototype.size = function () {
+            return Nats.one.plus(this.next().size());
         };
         return Cons;
-    })();
+    })(List);
     exports.Cons = Cons;
+    var TNil = (function (_super) {
+        __extends(TNil, _super);
+        function TNil() {
+            _super.apply(this, arguments);
+        }
+        /**
+            [].pop() returns undefined . I will be less forgiving.
+        */
+        TNil.prototype.first = function () {
+            return this._as(new Err(new Error(), "Tried to call first() on empty list!"));
+        };
+        ;
+        TNil.prototype.size = function () {
+            return Nats.zero;
+        };
+        /**
+            [1,2].slice(2,2) returns [] . I will be less forgiving.
+        */
+        TNil.prototype.next = function () {
+            return this._as(new Err(new Error(), "Tried to call next() on empty list!"));
+        };
+        ;
+        return TNil;
+    })(List);
+    exports.TNil = TNil;
+    exports.nil = new TNil();
+    exports.list = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i - 0] = arguments[_i];
+        }
+        if (args.length === 0) {
+            return exports.nil;
+        }
+    };
+    /**
+     * Returns true if two objects are structurally equal.
+     * todo need spec-like version, this one is already 'too efficient'
+     */
+    exports.eq = function (a, b) {
+        var t = Object.is(a, b);
+        if (!t) {
+            for (var _i = 0, _a = Object.keys(a); _i < _a.length; _i++) {
+                var key = _a[_i];
+                if (!exports.eq(a[key], a[key])) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    };
     /**
      * Takes a variable number of arguments and displays them as concatenated strings in an alert message, plus it calls console.error with the same arguments. Usage example:
      * signal(new Error(), "We got a problem", "Expected: ", 3, " got:", 2 + 2);
@@ -192,28 +455,13 @@ define(["require", "exports"], function (require, exports) {
     };
     var test;
     (function (test_1) {
-        /**azy
-         * Returns EqErr in case actual is equals to notExpected.
-         * Doesn't throw any exception
-         * @return null if no error occurred
-        */
-        function assertNotEquals(notExpected, actual) {
-            var res = Object.is(actual, notExpected);
-            if (res) {
-                return new EqErr(new Error(), actual);
-            }
-            else {
-                return null;
-            }
-            ;
-        }
-        test_1.assertNotEquals = assertNotEquals;
-        ;
         /**
+         * Uses Javascript's Object.is
+         *
          * Doesn't throw any exception,
          * @return null if no error occurred
         */
-        function assertEquals(expected, actual) {
+        function assertIs(expected, actual) {
             var res = Object.is(actual, expected);
             if (res) {
                 return null;
@@ -221,10 +469,52 @@ define(["require", "exports"], function (require, exports) {
             else {
                 return new NotEqErr(new Error(), expected, actual);
             }
-            ;
         }
-        test_1.assertEquals = assertEquals;
-        ;
+        test_1.assertIs = assertIs;
+        /**
+         * Returns EqErr in case actual is equals to notExpected. Uses Javascript Object.is
+         * Doesn't throw any exception
+         * @return null if no error occurred
+        */
+        function assertNotIs(notExpected, actual) {
+            var res = Object.is(actual, notExpected);
+            if (res) {
+                return new EqErr(new Error(), actual);
+            }
+            else {
+                return null;
+            }
+        }
+        test_1.assertNotIs = assertNotIs;
+        /**
+         * Doesn't throw any exception,
+         * @return null if no error occurred
+        */
+        function assertEq(expected, actual) {
+            var res = exports.eq(actual, expected);
+            if (res) {
+                return null;
+            }
+            else {
+                return new NotEqErr(new Error(), expected, actual);
+            }
+        }
+        test_1.assertEq = assertEq;
+        /**
+         * Returns EqErr in case actual is equals to notExpected.
+         * Doesn't throw any exception
+         * @return null if no error occurred
+        */
+        function assertNotEq(notExpected, actual) {
+            var res = exports.eq(actual, notExpected);
+            if (res) {
+                return new EqErr(new Error(), actual);
+            }
+            else {
+                return null;
+            }
+        }
+        test_1.assertNotEq = assertNotEq;
         var TestResult = (function () {
             function TestResult(testName, test, error) {
                 this.testName = testName;

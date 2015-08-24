@@ -1,5 +1,7 @@
 
 
+declare let Object : any;
+
 
 
 export var GRAZY_PREFIX = 'grazy';
@@ -57,39 +59,39 @@ export class Obj<T> { // cannot write T extends Obj...
   /**
    * Eventual error is status is 'ERROR'
    */
-  private __error : Err = Errors.NONE;
+  private __error: Err = Errors.NONE;
 
 
-  private __clone() : T {
-    let ret : T = <any> {};
-        for (let k of Object.keys(this)) {
-          ret[k] = this[k];
-        }      
+  private __clone(): T {
+    let ret: T = <any> {};
+    for (let k of Object.keys(this)) {
+      ret[k] = this[k];
+    }
     return ret;
   }
-  
-  protected _as(err : Err) : T{
-    let ret : Obj<{}> = <any> this.__clone();
-            
+
+  protected _as(err: Err): T {
+    let ret: Obj<{}> = <any> this.__clone();
+
     ret.__status = ObjStatus.ERROR;
-    if (err){
-      ret.__error = err;  
+    if (err) {
+      ret.__error = err;
     } else {
       ret.__error = new Err(new Error(), "Tried to set error on ", this, " but forgot to pass Err object!!");
     }
-    return <any> ret;      
+    return <any> ret;
   }
-  
-  protected _error() : Err{
+
+  protected _error(): Err {
     return this.__error;
   }
-  
-  protected _status() : ObjStatus{
+
+  protected _status(): ObjStatus {
     return this.__status;
   }
-  
-  
-  constructor(){
+
+
+  constructor() {
     this.__status = ObjStatus.TO_CALCULATE;
     this.__error = Errors.NONE;
   }
@@ -103,7 +105,7 @@ export class Obj<T> { // cannot write T extends Obj...
    * 
    */
   with(prop: string, v: any): T {
-    let ret : T = this.__clone();
+    let ret: T = this.__clone();
     ret[prop] = v;
     return <T> ret;
   }
@@ -115,7 +117,7 @@ export class Obj<T> { // cannot write T extends Obj...
  *
  */
 export class Err extends Obj<Err> {
-    
+
   name: string;
   message: string;
   error: Error;
@@ -202,24 +204,20 @@ export class NotEqErr extends Err {
  * A lazy sequence, possibly infinite
  */
 export class Seq<T extends Obj<{}>> extends Obj<Seq<T>> {
-  first(): T{
-       throw new Error("Subclasses must implment me!");
+  first(): T {
+    throw new Error("Subclasses must implment me!");
   };
-  next(): Seq<T>{
-       throw new Error("Subclasses must implment me!");
+  next(): Seq<T> {
+    throw new Error("Subclasses must implment me!");
   };
-  size(): SuperNat{
-       throw new Error("Subclasses must implment me!");
+  size(): SuperNat {
+    throw new Error("Subclasses must implment me!");
   };
 }
-     
 
 
-export module Nats {
-  export const zero: NatZero = new NatZero();
-  export const one: NatOne = new NatOne();
-  export const two: Nat;
-}
+
+
 
 
 /** 
@@ -227,12 +225,12 @@ export module Nats {
  */
 export class SuperNat extends Seq<Nil> {
   next(): SuperNat {
-      throw new Error("Subclasses must implment me!");
+    throw new Error("Subclasses must implment me!");
   };
-  plus(n : SuperNat) : SuperNat{
-     throw new Error("Subclasses must implment me!");
-  };  
-  
+  plus(n: SuperNat): SuperNat {
+    throw new Error("Subclasses must implment me!");
+  };
+
   size(): SuperNat {
     return this;
   }
@@ -242,77 +240,95 @@ export class SuperNat extends Seq<Nil> {
  * Here it is, the evil infinity
  */
 export class InfinityNat extends SuperNat {
- 
+
   first(): Nil {
-    return nil;   
+    return nil;
   }
   next(): InfinityNat {
-    return this;  
+    return this;
   }
-  
-  plus(n) : InfinityNat {
-    return this;   
+
+  plus(n: SuperNat): InfinityNat {
+    return this;
   }
-  
-  size(){
+
+  size() {
     return this;
   }
 }
 
 
-export class Bool extends Obj<Bool> {      
+export class Bool extends Obj<Bool> {
 }
 
-export function if_(c: Bool, th:Expr, el:Expr) {
-  
+/*
+export function if_(c: Bool, th: Expr, el: Expr) {
+
 }
+*/
      
 /** 
  * A finite natural number >= 0
  */
 export class Nat extends SuperNat {              
   // Should return itself!        
-  size() : Nat {
+  size(): Nat {
     return this;
   }
-    
-  
+
+
+  plus(n: Nat): Nat
+  plus(n: SuperNat): SuperNat {
+    return this;
+  }
+
 }
 
 export class NatZero extends Nat {
-       
-  plus(n : SuperNat) : SuperNat {
-    if (n instanceof NatZero){
+        
+  constructor (){
+    super();    
+  }        
+        
+  //plus(n: NatZero): NatZero
+  //plus(n: PositiveNat): PositiveNat
+  plus(n: Nat|NatZero|PositiveNat): Nat  
+  plus(n: SuperNat): SuperNat {
+    if (n instanceof NatZero) {
       return this;
     } else {
-      return n;   
-    }          
+      return <any> n;
+    }
   }
-  
-  first() : Nil {
-     return <any> this._as(new Err(new Error(), "Tried to get next() of zero!")); 
+
+  first(): Nil {
+    return <any> this._as(new Err(new Error(), "Tried to get next() of zero!"));
   }
-  
-  next(): Nat {      
-     return <any> this._as(new Err(new Error(), "Tried to get next() of zero!"));         
-  }    
-  
-  size() : NatZero {
+
+  next(): Nat {
+    return <any> this._as(new Err(new Error(), "Tried to get next() of zero!"));
+  }
+
+  size(): NatZero {
     return this;
   }
 }
 
 export class NatOne extends PositiveNat {
-  
-  first() : Nil {
-     return nil; 
+
+  constructor(){
+    super(Nats.zero);
   }
-  
-  next(): NatZero {      
-     return Nats.zero;         
-  }    
-  
-  size() : NatOne {
+
+  first(): Nil {
+    return nil;
+  }
+
+  next(): NatZero {
+    return Nats.zero;
+  }
+
+  size(): NatOne {
     return this;
   }
 }
@@ -320,54 +336,67 @@ export class NatOne extends PositiveNat {
 
 export class PositiveNat extends Nat {
 
-  private _next : Nat;
+  private _next: Nat;
+
+  constructor(n: Nat) {
+    super();
+    this._next = n;
+  }  
   
-  plus(n : SuperNat) : SuperNat {
-    if (n instanceof NatZero){
-      return this;
-    } else if (n instanceof InfinityNat){
+  //plus(n: Nat): PositiveNat;      
+  plus(n: SuperNat): SuperNat {
+            
+    if (n instanceof InfinityNat) {
       return n;
+    } else if (eq(this._next, Nats.zero)) {
+      return new PositiveNat(<Nat> n);
     } else {
-      return this._next.plus(n);  
-    }          
+      return new PositiveNat(this._next.plus(<Nat> n));
+    }            
+
   }
-  
-  first() : Nil {
-     return <any> this._as(new Err(new Error(), "Tried to get next() of zero!")); 
+
+  first(): Nil {
+    return <any> this._as(new Err(new Error(), "Tried to get next() of zero!"));
   }
-  
-  next(): Nat {      
-     return <any> this._as(new Err(new Error(), "Tried to get next() of zero!"));         
-  }    
-  
-  size() : PositiveNat {
-    return this;  
+
+  next(): Nat {
+    return <any> this._as(new Err(new Error(), "Tried to get next() of zero!"));
+  }
+
+  size(): PositiveNat {
+    return this;
   }
 }
 
-
+export module Nats {
+  export const zero: NatZero = new NatZero();
+  export const one: NatOne = new NatOne();
+  export const two: PositiveNat = <any> one.plus(one); // todo remove stupid any
+  export const infinity: InfinityNat = new NatZero();
+}
      
 /**
  * A finite list
  */
 export class List<T extends Obj<{}>> extends Seq<T > {
-  next(): List<T>{
+  next(): List<T> {
     throw new Error("Descendants should implement this method!");
   };
-  size(): Nat{
-        throw new Error("Descendants should implement this method!");
+  size(): Nat {
+    throw new Error("Descendants should implement this method!");
   }
 }
 
 export class Cons<T extends Obj<{}>> extends List<T> {
   _next: List<T>;
-  next() : List<T> {
-    return this._next;   
+  next(): List<T> {
+    return this._next;
   }
-  size() : Nat{
-    return Nats.one.plus(this.next().size());  
+  size(): Nat {
+    return Nats.one.plus(this.next().size());
   }
-  
+
 }
 
 
@@ -377,9 +406,9 @@ export class TNil<T extends Obj<{}>> extends List<T> {
       [].pop() returns undefined . I will be less forgiving.
   */
   first(): T {
-    return <any> this._as(new Err(new Error(),"Tried to call first() on empty list!"));    
+    return <any> this._as(new Err(new Error(), "Tried to call first() on empty list!"));
   };
-  
+
   size(): NatZero {
     return Nats.zero;
   }
@@ -387,20 +416,35 @@ export class TNil<T extends Obj<{}>> extends List<T> {
   /**
       [1,2].slice(2,2) returns [] . I will be less forgiving.
   */
-  next(): List<T>{
-    return this._as(new Err(new Error(),"Tried to call next() on empty list!"));  
+  next(): List<T> {
+    return this._as(new Err(new Error(), "Tried to call next() on empty list!"));
   };
 }
 
-export type Nil =  TNil<any>;
-
+export type Nil = TNil<any>;
 
 export let nil: Nil = new TNil();
 
-export let list = function<T extends Obj<{}>>(...args: T[]): List<T> {
-  if (args.length === 0){
+export let list = function <T extends Obj<{}>>(...args: T[]): List<T> {
+  if (args.length === 0) {
     return nil;
+  }
+}
+
+/**
+ * Returns true if two objects are structurally equal.
+ * todo need spec-like version, this one is already 'too efficient'
+ */
+export let eq = function (a : Obj<any>, b : Obj<any>) : boolean {
+  let t = Object.is(a,  b);
+  if (!t){
+    for (let key of Object.keys(a)){
+        if (!eq(a[key], a[key])){
+          return false;
+        }        
+    }    
   }  
+  return true;
 }  
 
 
@@ -434,33 +478,67 @@ export interface TreeVisitor<N, M> {
 
 
 export module test {
-
-  /**azy
-   * Returns EqErr in case actual is equals to notExpected.
-   * Doesn't throw any exception
-   * @return null if no error occurred
-  */
-  export function assertNotEquals(notExpected, actual): Err {
-    var res = Object.is(actual, notExpected);
-    if (res) {
-      return new EqErr(new Error(), actual);
-    } else {
-      return null;
-    };
-  };
-
+  
+  
+ 
   /**
+   * Uses Javascript's Object.is
+   * 
    * Doesn't throw any exception,
    * @return null if no error occurred
   */
-  export function assertEquals(expected, actual): Err {
+  export function assertIs(expected, actual): Err {
     var res = Object.is(actual, expected);
     if (res) {
       return null;
     } else {
       return new NotEqErr(new Error(), expected, actual);
-    };
-  };
+    }
+  }
+  
+  /**   
+   * Returns EqErr in case actual is equals to notExpected. Uses Javascript Object.is
+   * Doesn't throw any exception
+   * @return null if no error occurred
+  */
+  export function assertNotIs(notExpected, actual): Err {
+    var res = Object.is(actual, notExpected);
+    if (res) {
+      return new EqErr(new Error(), actual);
+    } else {
+      return null;
+    }
+  }
+  
+
+  /**
+   * Doesn't throw any exception,
+   * @return null if no error occurred
+  */
+  export function assertEq(expected, actual): Err {
+    var res = eq(actual, expected);
+    if (res) {
+      return null;
+    } else {
+      return new NotEqErr(new Error(), expected, actual);
+    }
+  }
+  
+  /**   
+   * Returns EqErr in case actual is equals to notExpected.
+   * Doesn't throw any exception
+   * @return null if no error occurred
+  */
+  export function assertNotEq(notExpected, actual): Err {
+    var res = eq(actual, notExpected);
+    if (res) {
+      return new EqErr(new Error(), actual);
+    } else {
+      return null;
+    }
+  }
+  
+
 
   export class TestResult {
     testName: string

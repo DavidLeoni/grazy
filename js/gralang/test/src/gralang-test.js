@@ -1,15 +1,18 @@
-define(["require", "exports", '../../main/src/gralang', './test-modules-4'], function (require, exports, gralang_1, test_modules_4_1) {
-    var Trees = gralang_1.default.Trees;
-    var List = gralang_1.default.List;
-    var GrazyErr = gralang_1.default.Err;
-    var TestSuite = gralang_1.default.test.TestSuite;
-    var assertEquals = gralang_1.default.test.assertEquals;
-    var assertNotEquals = gralang_1.default.test.assertNotEquals;
-    var report = gralang_1.default.report;
-    var t = gralang_1.default.nil;
-    exports.testGralang = gralang_1.default;
+define(["require", "exports", '../../main/src/defs', './test-modules-4'], function (require, exports, gralang, test_modules_4_1) {
+    var Trees = gralang.Trees;
+    var Nats = gralang.Nats;
+    var List = gralang.List;
+    var GrazyErr = gralang.Err;
+    var TestSuite = gralang.test.TestSuite;
+    var assertEquals = gralang.test.assertIs;
+    var assertNotEquals = gralang.test.assertNotIs;
+    var assertEq = gralang.test.assertEq;
+    var assertNotEq = gralang.test.assertNotEq;
+    var report = gralang.report;
+    var t = gralang.nil;
+    exports.testGralang = gralang;
     exports.testNice = test_modules_4_1.default;
-    var getCs = function (n) { return n.cs ? n.cs : List(); };
+    var getCs = function (n) { return n.cs ? n.cs : []; };
     var sumCs = function (field, n, mcs) {
         console.log("inside sumCs  makeM: ", "parentField: ", field, "n: ", n, "cs: ", mcs, "mcs.toArray(): ", mcs);
         return mcs.length > 0 ?
@@ -24,7 +27,7 @@ define(["require", "exports", '../../main/src/gralang', './test-modules-4'], fun
         testAssertEquals_1: function () {
             var res = assertEquals(true, true);
             if (res) {
-                return new gralang_1.default.NotEqErr(new Error(), null, res);
+                return new gralang.NotEqErr(new Error(), null, res);
             }
             else {
                 return null;
@@ -36,7 +39,7 @@ define(["require", "exports", '../../main/src/gralang', './test-modules-4'], fun
                 return null;
             }
             else {
-                return new gralang_1.default.NotEqErr(new Error(), null, res);
+                return new gralang.NotEqErr(new Error(), null, res);
             }
         },
         testAssertNotEquals_1: function () {
@@ -45,13 +48,13 @@ define(["require", "exports", '../../main/src/gralang', './test-modules-4'], fun
                 return null;
             }
             else {
-                return new gralang_1.default.EqErr(new Error(), res);
+                return new gralang.EqErr(new Error(), res);
             }
         },
         testAssertNotEquals_2: function () {
             var res = assertNotEquals(true, false);
             if (res) {
-                return new gralang_1.default.NotEqErr(new Error(), null, res);
+                return new gralang.NotEqErr(new Error(), null, res);
             }
             else {
                 return null;
@@ -62,6 +65,8 @@ define(["require", "exports", '../../main/src/gralang', './test-modules-4'], fun
         testGetCsLength: function () { return assertEquals(2, getCs({ cs: [1, 2] }).length); },
         testGetCs_1: function () { return assertEquals(1, getCs({ cs: [1, 2] }).first()); },
         testGetCs_2: function () { return assertEquals(2, getCs({ cs: [1, 2] }).last()); },
+        testZeroPlusZero: function () { return assertEq(Nats.zero, Nats.zero.plus(Nats.zero)); },
+        testZeroPlusOne: function () { return assertEq(Nats.one, Nats.zero.plus(Nats.one)); },
         testEmptyTree: function () { return assertEquals(3, Trees.fold({}, function (n) { return []; }, function (n) { return 3; })); },
         // nodes can be either numbers or {cs:[...]}
         testSumOneNodeTree: function () { return assertEquals(3, Trees.fold({ cs: [1, 2] }, getCs, sumCs)); },

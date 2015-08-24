@@ -9,9 +9,9 @@
         "declaration": false,
         "noImplicitAny": false,
         "removeComments": false,
-        "noEmitOnError": false     ,
+        "noEmitOnError": false ,
         "emitDecoratorMetadata": true,
-        "experimentalDecorators":true
+        "experimentalDecorators":true    
     },
     "files": [
         "./mods/gralang/main/src/defs.ts",

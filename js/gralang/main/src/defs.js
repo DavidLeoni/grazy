@@ -1,9 +1,16 @@
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 define(["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
     exports.GRAZY_PREFIX = 'grazy';
     exports.GRAZY_IRI = 'https://github.com/DavidLeoni/grazy/';
     /**
@@ -20,7 +27,7 @@ define(["require", "exports"], function (require, exports) {
         function GraphNode() {
         }
         return GraphNode;
-    })();
+    }());
     exports.GraphNode = GraphNode;
     exports.EmptyGraph = {
         "@id": exports.GRAZY_IRI + "empty-node",
@@ -34,12 +41,12 @@ define(["require", "exports"], function (require, exports) {
         var factoryFunction = constr.bind.apply(constr, args);
         return new factoryFunction();
     };
+    var ObjStatus;
     (function (ObjStatus) {
         ObjStatus[ObjStatus["COMPLETED"] = 0] = "COMPLETED";
         ObjStatus[ObjStatus["TO_CALCULATE"] = 1] = "TO_CALCULATE";
         ObjStatus[ObjStatus["ERROR"] = 2] = "ERROR";
-    })(exports.ObjStatus || (exports.ObjStatus = {}));
-    var ObjStatus = exports.ObjStatus;
+    })(ObjStatus = exports.ObjStatus || (exports.ObjStatus = {}));
     /**
      * Returns true if two objects are structurally equal.
      * todo need spec-like version, this one is already 'too efficient'
@@ -109,7 +116,7 @@ define(["require", "exports"], function (require, exports) {
             return ret;
         };
         return Obj;
-    })();
+    }());
     exports.Obj = Obj;
     /**
      * This class encapsulates Javascript Error object. It doesn't extend it because all the error inheritance stuff
@@ -128,12 +135,13 @@ define(["require", "exports"], function (require, exports) {
             for (var _i = 2; _i < arguments.length; _i++) {
                 params[_i - 2] = arguments[_i];
             }
-            _super.call(this);
+            var _this = _super.call(this) || this;
             // console.error.apply(null, params);
-            this.name = this.constructor.name;
-            this.message = message;
-            this.error = error;
-            this.params = params;
+            _this.name = _this.constructor.name;
+            _this.message = message;
+            _this.error = error;
+            _this.params = params;
+            return _this;
         }
         Err.prototype.toString = function () {
             return this.allParams().join("");
@@ -163,7 +171,7 @@ define(["require", "exports"], function (require, exports) {
             console.error.apply(console, completeParams);
         };
         return Err;
-    })(Obj);
+    }(Obj));
     exports.Err = Err;
     var Errors;
     (function (Errors) {
@@ -172,21 +180,23 @@ define(["require", "exports"], function (require, exports) {
     var EqErr = (function (_super) {
         __extends(EqErr, _super);
         function EqErr(error, actual) {
-            _super.call(this, error, "Failed assertion!", "  Expected something different than ->", actual, "<-\n");
-            this.actual = actual;
+            var _this = _super.call(this, error, "Failed assertion!", "  Expected something different than ->", actual, "<-\n") || this;
+            _this.actual = actual;
+            return _this;
         }
         return EqErr;
-    })(Err);
+    }(Err));
     exports.EqErr = EqErr;
     var NotEqErr = (function (_super) {
         __extends(NotEqErr, _super);
         function NotEqErr(error, expected, actual) {
-            _super.call(this, error, "Failed assertion!", "  Expected ->", expected, "<-\n", "  Actual   ->", actual, "<-");
-            this.expected = expected;
-            this.actual = actual;
+            var _this = _super.call(this, error, "Failed assertion!", "  Expected ->", expected, "<-\n", "  Actual   ->", actual, "<-") || this;
+            _this.expected = expected;
+            _this.actual = actual;
+            return _this;
         }
         return NotEqErr;
-    })(Err);
+    }(Err));
     exports.NotEqErr = NotEqErr;
     var Objs;
     (function (Objs) {
@@ -195,10 +205,10 @@ define(["require", "exports"], function (require, exports) {
     var Bool = (function (_super) {
         __extends(Bool, _super);
         function Bool() {
-            _super.apply(this, arguments);
+            return _super !== null && _super.apply(this, arguments) || this;
         }
         return Bool;
-    })(Obj);
+    }(Obj));
     exports.Bool = Bool;
     /**
      * A lazy sequence, possibly infinite
@@ -206,7 +216,7 @@ define(["require", "exports"], function (require, exports) {
     var Seq = (function (_super) {
         __extends(Seq, _super);
         function Seq() {
-            _super.apply(this, arguments);
+            return _super !== null && _super.apply(this, arguments) || this;
         }
         Seq.prototype.first = function () {
             throw new Error("Subclasses must implment me!");
@@ -221,7 +231,7 @@ define(["require", "exports"], function (require, exports) {
         };
         ;
         return Seq;
-    })(Obj);
+    }(Obj));
     exports.Seq = Seq;
     /**
      * A finite list
@@ -229,7 +239,7 @@ define(["require", "exports"], function (require, exports) {
     var List = (function (_super) {
         __extends(List, _super);
         function List() {
-            _super.apply(this, arguments);
+            return _super !== null && _super.apply(this, arguments) || this;
         }
         List.prototype.next = function () {
             throw new Error("Descendants should implement this method!");
@@ -239,12 +249,12 @@ define(["require", "exports"], function (require, exports) {
             throw new Error("Descendants should implement this method!");
         };
         return List;
-    })(Seq);
+    }(Seq));
     exports.List = List;
     var Cons = (function (_super) {
         __extends(Cons, _super);
         function Cons() {
-            _super.apply(this, arguments);
+            return _super !== null && _super.apply(this, arguments) || this;
         }
         Cons.prototype.next = function () {
             return this._next;
@@ -253,12 +263,12 @@ define(["require", "exports"], function (require, exports) {
             return Nats.one.plus(this.next().size());
         };
         return Cons;
-    })(List);
+    }(List));
     exports.Cons = Cons;
     exports.list = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i - 0] = arguments[_i];
+            args[_i] = arguments[_i];
         }
         if (args.length === 0) {
             return exports.nil;
@@ -267,7 +277,7 @@ define(["require", "exports"], function (require, exports) {
     var TNil = (function (_super) {
         __extends(TNil, _super);
         function TNil() {
-            _super.apply(this, arguments);
+            return _super !== null && _super.apply(this, arguments) || this;
         }
         /**
             [].pop() returns undefined . I will be less forgiving.
@@ -287,7 +297,7 @@ define(["require", "exports"], function (require, exports) {
         };
         ;
         return TNil;
-    })(List);
+    }(List));
     exports.TNil = TNil;
     exports.nil = new TNil();
     /**
@@ -296,7 +306,7 @@ define(["require", "exports"], function (require, exports) {
     var SuperNat = (function (_super) {
         __extends(SuperNat, _super);
         function SuperNat() {
-            _super.apply(this, arguments);
+            return _super !== null && _super.apply(this, arguments) || this;
         }
         SuperNat.prototype.next = function () {
             throw new Error("Subclasses must implment me!");
@@ -310,7 +320,7 @@ define(["require", "exports"], function (require, exports) {
             return this;
         };
         return SuperNat;
-    })(Seq);
+    }(Seq));
     exports.SuperNat = SuperNat;
     /**
      * Here it is, the evil infinity
@@ -318,7 +328,7 @@ define(["require", "exports"], function (require, exports) {
     var NatInfinity = (function (_super) {
         __extends(NatInfinity, _super);
         function NatInfinity() {
-            _super.apply(this, arguments);
+            return _super !== null && _super.apply(this, arguments) || this;
         }
         NatInfinity.prototype.first = function () {
             return exports.nil;
@@ -333,7 +343,7 @@ define(["require", "exports"], function (require, exports) {
             return this;
         };
         return NatInfinity;
-    })(SuperNat);
+    }(SuperNat));
     exports.NatInfinity = NatInfinity;
     /*
     export function if_(c: Bool, th: Expr, el: Expr) {
@@ -346,7 +356,7 @@ define(["require", "exports"], function (require, exports) {
     var Nat = (function (_super) {
         __extends(Nat, _super);
         function Nat() {
-            _super.apply(this, arguments);
+            return _super !== null && _super.apply(this, arguments) || this;
         }
         // Should return itself!        
         Nat.prototype.size = function () {
@@ -356,13 +366,14 @@ define(["require", "exports"], function (require, exports) {
             return this;
         };
         return Nat;
-    })(SuperNat);
+    }(SuperNat));
     exports.Nat = Nat;
     var NatPositive = (function (_super) {
         __extends(NatPositive, _super);
         function NatPositive(n) {
-            _super.call(this);
-            this._next = n;
+            var _this = _super.call(this) || this;
+            _this._next = n;
+            return _this;
         }
         NatPositive.prototype.plus = function (n) {
             if (n instanceof NatInfinity) {
@@ -385,12 +396,12 @@ define(["require", "exports"], function (require, exports) {
             return this;
         };
         return NatPositive;
-    })(Nat);
+    }(Nat));
     exports.NatPositive = NatPositive;
     var NatZero = (function (_super) {
         __extends(NatZero, _super);
         function NatZero() {
-            _super.call(this);
+            return _super.call(this) || this;
         }
         NatZero.prototype.plus = function (n) {
             if (n instanceof NatZero) {
@@ -410,12 +421,12 @@ define(["require", "exports"], function (require, exports) {
             return this;
         };
         return NatZero;
-    })(Nat);
+    }(Nat));
     exports.NatZero = NatZero;
     var NatOne = (function (_super) {
         __extends(NatOne, _super);
         function NatOne() {
-            _super.call(this, Nats.zero);
+            return _super.call(this, Nats.zero) || this;
         }
         NatOne.prototype.first = function () {
             return exports.nil;
@@ -427,7 +438,7 @@ define(["require", "exports"], function (require, exports) {
             return this;
         };
         return NatOne;
-    })(NatPositive);
+    }(NatPositive));
     exports.NatOne = NatOne;
     var Nats;
     (function (Nats) {
@@ -525,7 +536,7 @@ define(["require", "exports"], function (require, exports) {
                 this.error = error;
             }
             return TestResult;
-        })();
+        }());
         test_1.TestResult = TestResult;
         var TestSuite = (function () {
             function TestSuite(name, tests) {
@@ -563,7 +574,7 @@ define(["require", "exports"], function (require, exports) {
                 }
             };
             return TestSuite;
-        })();
+        }());
         test_1.TestSuite = TestSuite;
     })(test = exports.test || (exports.test = {}));
     var Trees;
@@ -653,7 +664,7 @@ define(["require", "exports"], function (require, exports) {
                 }
             }
             throw new Error("Shouldn't arrive till here...");
-            return makeM(null, null, null);
+            //return makeM(null, null, null);
         }
         Trees.fold = fold;
         function height(node, getChildren) {

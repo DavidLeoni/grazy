@@ -1,4 +1,6 @@
 define(["require", "exports", "typescript"], function (require, exports, ts) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
     var process;
     function compile(fileNames, options) {
         var program = ts.createProgram(fileNames, options);

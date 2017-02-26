@@ -1,4 +1,6 @@
-define(["require", "exports", '../../main/src/defs', './test-modules-4'], function (require, exports, g, test_modules_4_1) {
+define(["require", "exports", "../../main/src/defs", "./test-modules-4"], function (require, exports, g, test_modules_4_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
     var Trees = g.Trees;
     var Nats = g.Nats;
     var List = g.List;
@@ -175,12 +177,15 @@ define(["require", "exports", '../../main/src/defs', './test-modules-4'], functi
                 .addClass('error')
                 .text("Click on failed tests and check output in the console.")
                 .appendTo(targetDiv);
+            // document.write("<span class='error'>Check console after  clicking on failed tests.</span><br/>");
+            // document.write("<br/>");
         }
         else {
             $('<h2>')
                 .addClass('success')
                 .text("Suite SUCCESS: All tests passed. ")
                 .appendTo(targetDiv);
+            // document.write("<span class='success'> Suite SUCCESS: All tests passed. </span></br>");
         }
         $('<p>')
             .text("Total tests: " + testSuite.testResults.length)

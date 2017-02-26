@@ -1,4 +1,6 @@
 define(["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
     var A;
     (function (A) {
     })(A || (A = {}));
@@ -52,7 +54,7 @@ define(["require", "exports"], function (require, exports) {
                 return "";
             };
             return _Z;
-        })();
+        }());
         function Z() {
             return new _Z();
         }
@@ -65,7 +67,7 @@ define(["require", "exports"], function (require, exports) {
                 console.log(s);
             };
             return _WS;
-        })();
+        }());
         D.WS = new _WS();
         /**
          * Mmm, what about submodule?
@@ -89,7 +91,7 @@ define(["require", "exports"], function (require, exports) {
             };
             ;
             return X;
-        })();
+        }());
         D.X = X;
         var _V = (function () {
             function _V() {
@@ -98,7 +100,7 @@ define(["require", "exports"], function (require, exports) {
                 return "ciao";
             };
             return _V;
-        })();
+        }());
         function V() {
             return new _V();
         }
@@ -119,6 +121,8 @@ define(["require", "exports"], function (require, exports) {
         // note it is also possible to do the other way around (probably not useful):
         d = c;
     }
-    exports.default = {};
+    var c = C;
+    c = D;
+    exports.default = c;
 });
 //# sourceMappingURL=gralang-test-modules.js.map

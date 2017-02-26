@@ -1,4 +1,6 @@
 define(["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
     /**
      * The reference gralang implementation
      */
@@ -10,7 +12,7 @@ define(["require", "exports"], function (require, exports) {
             return this._s;
         };
         return _Trial;
-    })();
+    }());
     function Trial(z) {
         if (z) {
             return new _Trial(z);

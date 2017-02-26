@@ -1,6 +1,6 @@
 
 
-
+/*
 function log(target: Function, key: string, value: any) {
     return {
         value: function (...args: any[]) {
@@ -20,3 +20,5 @@ class C {
         return n * 2;
     }
 }
+
+*/

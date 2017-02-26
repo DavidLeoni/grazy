@@ -1,15 +1,20 @@
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var AC = (function () {
     function AC() {
     }
     AC.prototype.f = function () { return null; };
     ;
     return AC;
-})();
+}());
 /**
  * Without fields or functions, strange assignments can happen!
  */
@@ -32,14 +37,14 @@ var B = (function () {
     };
     ;
     return B;
-})();
+}());
 var Z = (function (_super) {
     __extends(Z, _super);
     function Z() {
-        _super.apply(this, arguments);
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     return Z;
-})(B);
+}(B));
 /**
  * B has field, we can't do it:
  */
@@ -58,15 +63,15 @@ class C extends B<string> {
 var E = (function (_super) {
     __extends(E, _super);
     function E() {
-        _super.apply(this, arguments);
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     return E;
-})(B);
+}(B));
 var D = (function () {
     function D() {
     }
     return D;
-})();
+}());
 function testD() {
     // doesn't work: let d1 : D<C>;
 }
@@ -84,7 +89,7 @@ var WithPropertyImpl = (function () {
         configurable: true
     });
     return WithPropertyImpl;
-})();
+}());
 function testWithProperty() {
     // can't do it (of course!) let wp1 : WithProperty = new WithProperty();	
     var wp2 = new WithPropertyImpl();

@@ -726,7 +726,7 @@ export module Trees {
 
     throw new Error("Shouldn't arrive till here...");
 
-    return makeM(null, null, null);
+    //return makeM(null, null, null);
   }
 
   export function height<N>(node: N,

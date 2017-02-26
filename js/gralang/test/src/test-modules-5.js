@@ -1,4 +1,6 @@
-define(["require", "exports", 'test-modules-4'], function (require, exports, test_modules_4_1) {
+define(["require", "exports", "test-modules-4"], function (require, exports, test_modules_4_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
     test_modules_4_1.default.Trials.println("Maybe I did it!");
     var t = test_modules_4_1.default.Trial();
     console.log("trial is ", t);

@@ -1,1 +1,1 @@
-{"version":3,"file":"test-modules-3.js","sourceRoot":"","sources":["../../../../mods/gralang/test/src/test-modules-3.ts"],"names":["Trials"],"mappings":";IAQA,IAAc,MAAM,CAEnB;IAFD,WAAc,MAAM,EAAC,CAAC;QAC8BA,JACpDA,CAACA,EAFa,MAAM,GAAN,cAAM,KAAN,cAAM,QAEnB"}
+{"version":3,"file":"test-modules-3.js","sourceRoot":"","sources":["../../../../mods/gralang/test/src/test-modules-3.ts"],"names":[],"mappings":";;;IAQA,IAAc,MAAM,CAEnB;IAFD,WAAc,MAAM;IAEpB,CAAC,EAFa,MAAM,GAAN,cAAM,KAAN,cAAM,QAEnB"}

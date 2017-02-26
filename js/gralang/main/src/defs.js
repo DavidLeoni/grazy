@@ -1,3 +1,8 @@
+// ***********************************************
+//
+// Simpler defs, should use more structural typing
+//
+// ************************************************
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -99,6 +104,9 @@ define(["require", "exports"], function (require, exports) {
         Obj.prototype._error = function () {
             return this.__error;
         };
+        Obj.prototype._features = function () {
+            return this.__features;
+        };
         Obj.prototype._status = function () {
             return this.__status;
         };
@@ -118,6 +126,12 @@ define(["require", "exports"], function (require, exports) {
         return Obj;
     }());
     exports.Obj = Obj;
+    var Feature = (function () {
+        function Feature() {
+        }
+        return Feature;
+    }());
+    exports.Feature = Feature;
     /**
      * This class encapsulates Javascript Error object. It doesn't extend it because all the error inheritance stuff
      * in Javascript is really fucked up.

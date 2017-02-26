@@ -28,6 +28,21 @@ declare var $: any; // as elegant as it can be
 export var testGralang = g;
 export var testNice = nice;
 
+// Testing Features
+
+// notice you can't  have   : g.Finite & g.Infinite  :-)
+
+let fi : g.Finite = new class extends Obj {
+  __features:{finite:true}
+}
+
+let inf : g.Infinite = new class extends Obj {
+  __features:{finite:false}
+}
+
+
+
+
 var getCs = (n) => n.cs ? n.cs : [];
 var sumCs = (field, n, mcs: number[]): number => {
     console.log("inside sumCs  makeM: ", "parentField: ", field, "n: ", n, "cs: ", mcs, "mcs.toArray(): ", mcs);

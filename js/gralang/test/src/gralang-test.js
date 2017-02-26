@@ -1,3 +1,13 @@
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 define(["require", "exports", "../../main/src/defs", "./test-modules-4"], function (require, exports, g, test_modules_4_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -15,6 +25,22 @@ define(["require", "exports", "../../main/src/defs", "./test-modules-4"], functi
     var t = g.nil;
     exports.testGralang = g;
     exports.testNice = test_modules_4_1.default;
+    // Testing Features
+    // notice you can't  have   : g.Finite & g.Infinite  :-)
+    var fi = new (function (_super) {
+        __extends(class_1, _super);
+        function class_1() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        return class_1;
+    }(Obj));
+    var inf = new (function (_super) {
+        __extends(class_2, _super);
+        function class_2() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        return class_2;
+    }(Obj));
     var getCs = function (n) { return n.cs ? n.cs : []; };
     var sumCs = function (field, n, mcs) {
         console.log("inside sumCs  makeM: ", "parentField: ", field, "n: ", n, "cs: ", mcs, "mcs.toArray(): ", mcs);

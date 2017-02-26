@@ -1,8 +1,4 @@
-// ***********************************************
-//
-// Simpler defs, should use more structural typing
-//
-// ************************************************
+
 
 declare let Object : any;
 
@@ -49,11 +45,12 @@ export enum ObjStatus {
   ERROR
 } 
 
+
 /**
  * Returns true if two objects are structurally equal.
  * todo need spec-like version, this one is already 'too efficient'
  */
-export let eq = function (a : Obj, b : Obj) : boolean {
+export let eq = function (a : Obj<any>, b : Obj<any>) : boolean {
   let t = Object.is(a,  b);
   if (!t){
     for (let key of Object.keys(a)){
@@ -65,16 +62,12 @@ export let eq = function (a : Obj, b : Obj) : boolean {
   return true;
 }  
 
-
-
 /**
  * todo p1 add decorator for creating withers, 
  * see http://stackoverflow.com/questions/31224574/generate-generic-getters-and-setters-for-entity-properties-using-decorators
  */
-export class Obj { // cannot write T extends Obj...
+export class Obj<T> { // cannot write T extends Obj...
   
-  __features : {[key:string] : boolean}
-
   private __status = ObjStatus.TO_CALCULATE;
   
   /**
@@ -83,16 +76,16 @@ export class Obj { // cannot write T extends Obj...
   private __error: Err = Errors.NONE;
 
 
-  private __clone(): this {
-    let ret = {};
+  private __clone(): T {
+    let ret: T = <any> {};
     for (let k of Object.keys(this)) {
       ret[k] = this[k];
     }
-    return <any> ret;
+    return ret;
   }
 
-  protected _as(err: Err): this {
-    let ret = this.__clone();
+  protected _as(err: Err): T {
+    let ret: Obj<{}> = <any> this.__clone();
 
     ret.__status = ObjStatus.ERROR;
     if (err) {
@@ -100,15 +93,11 @@ export class Obj { // cannot write T extends Obj...
     } else {
       ret.__error = new Err(new Error(), "Tried to set error on ", this, " but forgot to pass Err object!!");
     }
-    return ret;
+    return <any> ret;
   }
 
   protected _error(): Err {
     return this.__error;
-  }
-
-protected _features(): {[key:string]:Feature} {
-    return this.__features;
   }
 
   protected _status(): ObjStatus {
@@ -129,24 +118,11 @@ protected _features(): {[key:string]:Feature} {
    * 'nameof' operator support: https://github.com/Microsoft/TypeScript/issues/1579
    * 
    */
-  with(prop: string, v: any): this {
-    let ret = this.__clone();
+  with(prop: string, v: any): T {
+    let ret: T = this.__clone();
     ret[prop] = v;
-    return ret;
+    return <T> ret;
   }
-}
-
-
-export class Feature  {
-
-}
-
-export interface Finite extends Feature {
-  __features : {finite :true}
-}
-
-export interface Infinite extends Feature {
-  __features : {finite : false}
 }
 
 
@@ -156,7 +132,7 @@ export interface Infinite extends Feature {
  * in Javascript is really fucked up.
  *
  */
-export class Err extends Obj {
+export class Err extends Obj<Err> {
 
   name: string;
   message: string;
@@ -242,14 +218,14 @@ export module Objs {
   export let empty = new Obj();
 }
 
-export class Bool extends Obj {
+export class Bool extends Obj<Bool> {
 }
 
 
 /**
  * A lazy sequence, possibly infinite
  */
-export class Seq<T extends Obj> extends Obj {
+export class Seq<T extends Obj<{}>> extends Obj<Seq<T>> {
   first(): T {
     throw new Error("Subclasses must implment me!");
   };
@@ -266,7 +242,7 @@ export class Seq<T extends Obj> extends Obj {
 /**
  * A finite list
  */
-export class List<T extends Obj> extends Seq<T> {
+export class List<T extends Obj<{}>> extends Seq<T > {
   next(): List<T> {
     throw new Error("Descendants should implement this method!");
   };
@@ -275,7 +251,7 @@ export class List<T extends Obj> extends Seq<T> {
   }
 }
 
-export class Cons<T extends Obj> extends List<T> {
+export class Cons<T extends Obj<{}>> extends List<T> {
   _next: List<T>;
   next(): List<T> {
     return this._next;
@@ -290,7 +266,7 @@ export class Cons<T extends Obj> extends List<T> {
 
 
 
-export let list = function <T extends Obj>(...args: T[]): List<T> {
+export let list = function <T extends Obj<{}>>(...args: T[]): List<T> {
   if (args.length === 0) {
     return nil;
   }
@@ -298,7 +274,7 @@ export let list = function <T extends Obj>(...args: T[]): List<T> {
 
 
 
-export class TNil<T extends Obj> extends List<T> {
+export class TNil<T extends Obj<{}>> extends List<T> {
 
   /**
       [].pop() returns undefined . I will be less forgiving.
@@ -549,7 +525,7 @@ export module test {
    * Doesn't throw any exception,
    * @return null if no error occurred
   */
-  export function assertEq(expected : Obj, actual : Obj): Err {
+  export function assertEq(expected : Obj<any>, actual : Obj<any>): Err {
     var res = eq(expected, actual);
     if (res) {
       return null;
@@ -563,7 +539,7 @@ export module test {
    * Doesn't throw any exception
    * @return null if no error occurred
   */
-  export function assertNotEq(notExpected : Obj, actual  : Obj): Err {
+  export function assertNotEq(notExpected : Obj<any>, actual  : Obj<any>): Err {
     var res = eq(notExpected, actual);
     if (res) {
       return new EqErr(new Error(), actual);

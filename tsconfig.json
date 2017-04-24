@@ -18,6 +18,8 @@
         "./mods/gralang/main/src/ref-impl.ts",
         "./mods/gralang/main/src/gralang.ts",
         "./mods/gralang/test/src/gralang-test.ts",
+        "./mods/gralang/test/src/pattern-test-4.ts",
+
         "./mods/gralang/test/src/gralang-test-generics.ts",
         "./mods/gralang/test/src/gralang-test-modules.ts",
         "./mods/gralang/test/src/gralang-test-grammar.ts",  
